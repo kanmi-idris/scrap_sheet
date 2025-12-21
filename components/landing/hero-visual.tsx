@@ -48,7 +48,7 @@ export function HeroVisual() {
               initial={{ width: "0%" }}
               animate={{ width: "60%" }}
               transition={{ delay: 0.5, duration: 1 }}
-              className="h-10 bg-white/10 rounded-lg w-3/4"
+              className="h-10 bg-white/8 rounded-lg w-3/4"
             />
 
             {/* Paragraph 1 */}
@@ -114,7 +114,7 @@ export function HeroVisual() {
           </div>
           <div className="flex-1">
             <div className="h-2 w-16 bg-white/20 rounded mb-1" />
-            <div className="h-2 w-10 bg-white/10 rounded" />
+            <div className="h-2 w-10 bg-white/8 rounded" />
           </div>
         </div>
       </motion.div>

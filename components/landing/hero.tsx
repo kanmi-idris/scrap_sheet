@@ -83,7 +83,7 @@ export function Hero() {
           <Button
             size="lg"
             variant="outline"
-            className="w-full h-12 px-8 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white text-base focus-visible:ring-2 focus-visible:ring-white"
+            className="w-full h-12 px-8 rounded-full border-white/10 bg-white/5 hover:bg-white/8 text-white text-base focus-visible:ring-2 focus-visible:ring-white"
             aria-label="Star Scrap Sheet on GitHub"
           >
             <HugeiconsIcon
