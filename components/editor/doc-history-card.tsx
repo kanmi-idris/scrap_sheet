@@ -8,6 +8,8 @@ import {
   formatTime12Hour,
 } from "@/lib/utils";
 import { Version } from "@/triplit/schema";
+import { Close } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence, motion } from "motion/react";
 
 interface DocHistoryCardProps {
@@ -20,6 +22,7 @@ export function DocHistoryCard({
   history = [],
 }: DocHistoryCardProps) {
   const isHistoryOpen = useEditorStore((s) => s.isHistoryOpen);
+  const setIsHistoryOpen = useEditorStore((s) => s.setIsHistoryOpen);
   const versionBeingPreviewed = useEditorStore((s) => s.versionBeingPreviewed);
   const setVersionBeingPreviewed = useEditorStore(
     (s) => s.setVersionBeingPreviewed
@@ -56,6 +59,25 @@ export function DocHistoryCard({
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="fixed right-6 top-24 w-72 max-h-[calc(100vh-176px)] flex flex-col rounded-2xl border border-muted-foreground/30 bg-background shadow-lg z-50 overflow-hidden"
         >
+          {/* Header with Close Button */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-muted-foreground/10">
+            <h2 className="text-sm font-semibold">Version History</h2>
+            <Button
+              onClick={() => setIsHistoryOpen(false)}
+              variant="ghost"
+              size="icon-xs"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close version history"
+            >
+              <HugeiconsIcon
+                icon={Close}
+                className="size-4"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+            </Button>
+          </div>
+
           {/* Top Action Area - Only visible if version selected */}
           {selectedVersion && (
             <div className="p-3 border-b border-muted-foreground/10 bg-muted/20">
