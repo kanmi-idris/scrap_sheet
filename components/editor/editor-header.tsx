@@ -71,7 +71,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
       <div className="flex items-center min-w-0 shrink h-full">
         <Link
           href="/dashboard"
-          className="me-3.5 flex items-center justify-center h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+          className="me-3.5 flex items-center justify-center h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
           title="Back to Dashboard"
         >
           <HugeiconsIcon
@@ -83,25 +83,20 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
         </Link>
         <Separator
           orientation="vertical"
-          className="bg-white/10 hidden sm:block"
+          className="bg-white/10 hidden sm:block shrink-0"
         />
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Document"
-          className="bg-transparent border-none outline-none text-sm font-medium text-foreground placeholder:text-muted-foreground/50 w-32 sm:w-48 truncate focus:ring-0 h-full py-1 focus:bg-white/5 px-4 transition-colors"
+          className="bg-transparent border-none outline-none text-sm font-medium text-foreground placeholder:text-muted-foreground/50 w-32 sm:w-48 md:w-56 truncate focus:ring-0 h-full py-1 focus:bg-white/5 px-4 transition-colors"
         />
       </div>
 
       {/* Center section - Toolbar (Desktop) */}
-      <div className="flex items-center gap-1 overflow-hidden">
+      <div className="flex items-center gap-1 overflow-hidden ms-4">
         <div className="hidden md:flex items-center">
-          {/* Font Selector */}
-          <FontSelector />
-
-          <Separator orientation="vertical" className="mx-1 bg-white/10" />
-
           {ALL_TOOLBAR_ITEMS.map((item, index) => (
             <Fragment key={item.id}>
               {item.isFirstInGroup && (
@@ -113,7 +108,13 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                   )}
                 />
               )}
-              {item.component === "ColorPicker" ? (
+              {item.component === "FontSelector" ? (
+                <div
+                  className={cn(getVisibilityClasses(item.visibleFrom).toolbar)}
+                >
+                  <FontSelector />
+                </div>
+              ) : item.component === "ColorPicker" ? (
                 <ColorPicker
                   value={editor?.getAttributes("textStyle").color}
                   onChange={(color) =>
@@ -214,7 +215,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                 className="w-48 max-h-80 overflow-y-auto bg-surface-night border-white/10 text-foreground"
               >
                 {ALL_TOOLBAR_ITEMS.filter(
-                  (item) => item.visibleFrom !== "always"
+                  (item) => item.component !== "FontSelector"
                 ).map((item) => (
                   <DropdownMenuItem
                     key={item.id}
@@ -222,8 +223,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                     disabled={item.disabled?.(editor)}
                     className={cn(
                       "gap-2 cursor-pointer focus:bg-white/10 focus:text-foreground",
-                      item.isActive?.(editor) && "bg-white/15",
-                      getVisibilityClasses(item.visibleFrom).dropdown
+                      item.isActive?.(editor) && "bg-white/15"
                     )}
                   >
                     <HugeiconsIcon

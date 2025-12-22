@@ -59,7 +59,7 @@ export const TOOLBAR_GROUPS: ToolbarGroup[] = [
         icon: ArrowTurnBackwardIcon,
         action: (e) => e?.chain().focus().undo().run(),
         disabled: (e) => !e?.can().undo(),
-        visibleFrom: "always",
+        visibleFrom: "lg",
       },
       {
         id: "redo",
@@ -67,7 +67,21 @@ export const TOOLBAR_GROUPS: ToolbarGroup[] = [
         icon: ArrowTurnForwardIcon,
         action: (e) => e?.chain().focus().redo().run(),
         disabled: (e) => !e?.can().redo(),
+        visibleFrom: "lg",
+      },
+    ],
+  },
+  {
+    id: "font",
+    items: [
+      {
+        id: "fontFamily",
+        label: "Font Family",
+        icon: TextBoldIcon,
+        action: () => {},
+        isActive: () => false,
         visibleFrom: "always",
+        component: "FontSelector",
       },
     ],
   },
