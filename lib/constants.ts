@@ -7,10 +7,10 @@ export const DOC_PREVIEW_LENGTH = 100;
 export const EDITOR_DEBOUNCE_MS = 300; // Delay before saving after user stops typing
 export const AUTOSAVE_INTERVAL_MS = 1000; // Interval between saves during continuous typing
 export const TYPING_INACTIVITY_MS = 2000; // Time until is user considered "not typing"
-export const VERSION_ROTATION_MS = 5 * 60 * 1000; // Create new version snapshot every 5 minutes
+export const VERSION_ROTATION_MS = 30 * 1000; // TEST ONLY: 30 seconds (PRODUCTION: 5 * 60 * 1000)
 
 export const SECONDS_IN_MONTH = 30 * 24 * 60 * 60; // 30 days = 1 month
-export const VERSION_VALIDITY_SECONDS = 3 * SECONDS_IN_MONTH; // 3 months (90 days) before auto-cleanup
+export const VERSION_VALIDITY_SECONDS = 60; // TEST ONLY: 60 seconds (PRODUCTION: 3 * SECONDS_IN_MONTH)
 export const MILLISECONDS_IN_DAY = 1000 * 60 * 60 * 24; // Milliseconds in one day
 
 export const VISIBLE_TOOLBAR_GROUPS_COUNT = 2; // Number of toolbar groups visible in editor header before overflow

@@ -39,6 +39,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
   const isUpdatingDataStore = useEditorStore((s) => s.isUpdatingDataStore);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
   const wordCount = useEditorStore((s) => s.wordCount);
+  const versionBeingPreviewed = useEditorStore((s) => s.versionBeingPreviewed);
 
   const hasOverflowItems = ALL_TOOLBAR_ITEMS.some(
     (item) => item.visibleFrom !== "always"
@@ -48,6 +49,8 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
   const setIsHistoryOpen = useEditorStore((s) => s.setIsHistoryOpen);
   const markUserTyping = useEditorStore((s) => s.markUserTyping);
   const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
+
+  const isPreviewMode = !!versionBeingPreviewed;
 
   const handleTitleChange = (nextTitle: string) => {
     setTitle(nextTitle);
@@ -59,7 +62,10 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="flex h-14 items-center justify-between px-2 sm:px-4 sm:m-3 m-0 sm:rounded-2xl rounded-none border-b sm:border border-white/10 bg-surface-night/10 backdrop-blur-xl shadow-lg shadow-black/20 z-50 overflow-hidden sticky top-0 left-0 right-0 sm:static"
+      className={cn(
+        "flex h-14 items-center justify-between px-2 sm:px-4 sm:m-3 m-0 sm:rounded-2xl rounded-none border-b sm:border border-white/10 bg-surface-night/10 backdrop-blur-xl shadow-lg shadow-black/20 z-50 overflow-hidden sticky top-0 left-0 right-0 sm:static transition-opacity",
+        isPreviewMode && "pointer-events-none opacity-50 select-none"
+      )}
     >
       {/* Left section - Go back + Title */}
       <div className="flex items-center min-w-0 shrink h-full">

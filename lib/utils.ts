@@ -91,3 +91,22 @@ export function formatDateShort(date: Date | string | number): string {
     day: "numeric",
   });
 }
+
+/**
+ * Format full date and time for preview banner (e.g., "Dec 22, 2025 at 4:54 PM")
+ */
+export function formatPreviewTimestamp(date: Date | string | number): string {
+  const d = new Date(date);
+  return (
+    d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }) +
+    " at " +
+    d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    })
+  );
+}

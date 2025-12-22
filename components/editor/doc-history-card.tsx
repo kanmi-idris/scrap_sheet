@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { SECONDS_IN_MONTH, VERSION_VALIDITY_SECONDS } from "@/lib/constants";
 import { useEditorStore } from "@/lib/store/editor-store";
-import { cn, formatDateShort, formatTime12Hour } from "@/lib/utils";
+import {
+  cn,
+  formatDateShort,
+  formatRelativeTime,
+  formatTime12Hour,
+} from "@/lib/utils";
 import { Version } from "@/triplit/schema";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -95,14 +100,17 @@ export function DocHistoryCard({
                             onClick={() => setVersionBeingPreviewed(version)}
                             variant="ghost"
                             className={cn(
-                              "w-full justify-start px-3 py-2.5 h-auto rounded-xl border transition-all text-sm",
+                              "w-full justify-start px-3 py-2.5 h-auto rounded-xl border transition-all text-sm flex-col items-start gap-0.5",
                               isSelected
                                 ? "bg-primary/10 border-primary/40 text-foreground ring-1 ring-primary/30"
                                 : "border-white/10 hover:bg-white/5 hover:border-white/20 text-muted-foreground hover:text-foreground"
                             )}
                           >
-                            <span className="truncate flex-1 text-left">
+                            <span className="truncate w-full text-left font-medium">
                               {formatTime12Hour(version.timestamp)}
+                            </span>
+                            <span className="text-xs opacity-60 truncate w-full text-left">
+                              {formatRelativeTime(version.timestamp)}
                             </span>
                           </Button>
                         );

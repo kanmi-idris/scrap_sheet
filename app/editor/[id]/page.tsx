@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useEditorStore } from "@/lib/store/editor-store";
+import { formatPreviewTimestamp } from "@/lib/utils";
 import { triplit } from "@/triplit/client";
 import { useQuery } from "@triplit/react";
 import Link from "next/link";
@@ -139,7 +140,7 @@ export default function EditorPage({
         {versionBeingPreviewed && (
           <div className="sticky top-(--header-height,64px) z-20 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium backdrop-blur-sm">
             Previewing version from{" "}
-            {new Date(versionBeingPreviewed.timestamp).toLocaleString()}
+            {formatPreviewTimestamp(versionBeingPreviewed.timestamp)}
           </div>
         )}
 
