@@ -30,3 +30,46 @@ export const FONTS = [
   { name: "Verdana", value: "Verdana, Geneva, sans-serif" },
   { name: "Excalifont", value: "Excalifont, sans-serif" },
 ];
+
+export const PRESET_COLORS = [
+  "#000000",
+  "#444444",
+  "#888888",
+  "#ffffff", // Monochrome
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#eab308", // Warm
+  "#84cc16",
+  "#22c55e",
+  "#10b981",
+  "#14b8a6", // Green/Teal
+  "#06b6d4",
+  "#0ea5e9",
+  "#3b82f6",
+  "#6366f1", // Blue/Indigo
+  "#8b5cf6",
+  "#a855f7",
+  "#d946ef",
+  "#ec4899", // Purple/Pink
+];
+
+export const DEFAULT_TEXT_COLOR = "#ffffff";
+
+export const PRESET_FORMULAS = [
+  { label: "E = mc²", latex: "E = mc^2" },
+  { label: "Pythagorean", latex: "a^2 + b^2 = c^2" },
+  { label: "Quadratic", latex: "x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}" },
+  { label: "Summation", latex: "\\sum_{i=1}^{n} x_i" },
+  { label: "Integral", latex: "\\int_{a}^{b} f(x) dx" },
+  { label: "Limit", latex: "\\lim_{x \\to \\infty} f(x)" },
+  { label: "Derivative", latex: "\\frac{dy}{dx}" },
+  { label: "Partial", latex: "\\frac{\\partial f}{\\partial x}" },
+  {
+    label: "Matrix",
+    latex: "\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}",
+  },
+  { label: "Square Root", latex: "\\sqrt{x}" },
+  { label: "Fraction", latex: "\\frac{a}{b}" },
+  { label: "Pi", latex: "\\pi" },
+];

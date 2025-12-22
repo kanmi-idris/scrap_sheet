@@ -137,26 +137,29 @@ export default function EditorPage({
 
   return (
     <EditorRoot>
-      <div className="h-full flex flex-col relative">
-        <EditorHeader documentId={documentId} />
+      <div className="h-full flex flex-col relative scrollbar-hide">
+        {/* Fixed Header - stays at top during scroll */}
+        <div className="sticky top-0 z-30">
+          <EditorHeader documentId={documentId} />
+        </div>
 
-        {/* Main content area */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Preview Banner */}
-          {versionBeingPreviewed && (
-            <div className="absolute top-0 left-0 right-0 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium z-10 backdrop-blur-sm">
-              Previewing version from{" "}
-              {new Date(versionBeingPreviewed.timestamp).toLocaleString()}
-            </div>
-          )}
-
-          {/* AI Action Toolbar - floating left */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
-            <AIActionToolbar />
+        {/* Preview Banner - fixed below header */}
+        {versionBeingPreviewed && (
+          <div className="sticky top-(--header-height,64px) z-20 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium backdrop-blur-sm">
+            Previewing version from{" "}
+            {new Date(versionBeingPreviewed.timestamp).toLocaleString()}
           </div>
+        )}
 
+        {/* AI Action Toolbar - fixed to viewport, always visible */}
+        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-20">
+          <AIActionToolbar />
+        </div>
+
+        {/* Main scrollable content area */}
+        <div className="flex-1 overflow-y-auto w-full scrollbar-hide">
           {/* Editor - Google Docs style */}
-          <div className="h-full flex flex-col items-center justify-start sm:py-3 sm:px-4 px-0 py-0 overflow-y-auto w-full custom-scrollbar">
+          <div className="h-full flex flex-col items-center justify-start sm:py-3 sm:px-4 px-0 py-0 w-full">
             <div
               className="w-full sm:max-w-[210mm] min-h-full sm:min-h-[297mm] bg-editor-paper sm:shadow-xl sm:border border-white/5 sm:rounded-sm shrink-0 mx-auto transition-all duration-300"
               style={{ fontFamily }}
@@ -166,7 +169,7 @@ export default function EditorPage({
                 <span className="sr-only">Loading document content...</span>
               )}
               <Editor
-                // the key changes forces the editor to remount to c=show the new changes
+                // this key changes forces the editor to remount to c=show the new changes
                 key={`${documentId}:${
                   versionBeingPreviewed?.id ?? (isHydrated ? "live" : "loading")
                 }`}
@@ -177,10 +180,10 @@ export default function EditorPage({
               />
             </div>
           </div>
-
-          {/* Document History Card */}
-          <DocHistoryCard documentId={documentId} history={versionsList} />
         </div>
+
+        {/* Document History Card */}
+        <DocHistoryCard documentId={documentId} history={versionsList} />
 
         {/* Floating AI Input Bar - fixed at bottom center */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50">

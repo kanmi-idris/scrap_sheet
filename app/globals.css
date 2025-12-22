@@ -157,12 +157,51 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Global scrollbar hiding */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar utility class */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Novel / ProseMirror Styles */
 .ProseMirror {
   @apply p-12 px-8 sm:px-12;
   min-height: 500px;
+}
+
+/* Headings: explicit hierarchy so heading toggles are visible */
+.ProseMirror h1 {
+  @apply text-3xl sm:text-4xl font-semibold tracking-tight mt-10 mb-4;
+}
+
+.ProseMirror h2 {
+  @apply text-2xl sm:text-3xl font-semibold tracking-tight mt-8 mb-3;
+}
+
+.ProseMirror h3 {
+  @apply text-xl sm:text-2xl font-semibold tracking-tight mt-6 mb-2;
+}
+
+.ProseMirror :is(h1, h2, h3) {
+  @apply scroll-mt-24;
 }
 
 .ProseMirror .is-editor-empty:first-child::before {

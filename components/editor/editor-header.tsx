@@ -1,15 +1,20 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LinkInput } from "@/components/ui/link-input";
+import { MathInput } from "@/components/ui/math-input";
 import { Separator } from "@/components/ui/separator";
-import { TOOLBAR_GROUPS } from "@/lib/config/editor-toolbar-config";
-import { VISIBLE_TOOLBAR_GROUPS_COUNT } from "@/lib/constants";
+import {
+  ALL_TOOLBAR_ITEMS,
+  getVisibilityClasses,
+} from "@/lib/config/editor-toolbar-config";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import {
@@ -28,7 +33,6 @@ interface EditorHeaderProps {
 }
 
 export function EditorHeader({ documentId }: EditorHeaderProps) {
-  // Get editor instance from Zustand (set by EditorContent onCreate)
   const editor = useEditorStore((s) => s.editorInstance);
   const title = useEditorStore((s) => s.title);
   const isHistoryOpen = useEditorStore((s) => s.isHistoryOpen);
@@ -36,10 +40,8 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
   const wordCount = useEditorStore((s) => s.wordCount);
 
-  const visibleGroups = TOOLBAR_GROUPS.slice(0, VISIBLE_TOOLBAR_GROUPS_COUNT);
-  const overflowGroups = TOOLBAR_GROUPS.slice(VISIBLE_TOOLBAR_GROUPS_COUNT);
-  const activeOverflowItems = overflowGroups.flatMap((group) =>
-    group.items.filter((item) => item.isActive?.(editor))
+  const hasOverflowItems = ALL_TOOLBAR_ITEMS.some(
+    (item) => item.visibleFrom !== "always"
   );
 
   const setTitle = useEditorStore((s) => s.setTitle);
@@ -88,74 +90,89 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
 
       {/* Center section - Toolbar (Desktop) */}
       <div className="flex items-center gap-1 overflow-hidden">
-        <div className="hidden md:flex">
+        <div className="hidden md:flex items-center">
           {/* Font Selector */}
           <FontSelector />
 
           <Separator orientation="vertical" className="mx-1 bg-white/10" />
 
-          {/* Visible toolbar groups */}
-          {visibleGroups.map((group, group_index) => (
-            <Fragment key={group.id}>
-              {group_index > 0 && (
+          {ALL_TOOLBAR_ITEMS.map((item, index) => (
+            <Fragment key={item.id}>
+              {item.isFirstInGroup && (
                 <Separator
                   orientation="vertical"
-                  className=" mx-1 bg-white/10"
+                  className={cn(
+                    "mx-1 bg-white/10",
+                    getVisibilityClasses(item.visibleFrom).toolbar
+                  )}
                 />
               )}
-              {group.items.map((item) => {
-                const handleClick = () => {
-                  console.log("[TOOLBAR] Button clicked:", item.id);
-                  console.log(
-                    "[TOOLBAR] Editor instance:",
-                    editor ? "exists" : "NULL"
-                  );
-                  console.log("[TOOLBAR] Editor editable:", editor?.isEditable);
-                  console.log(
-                    "[TOOLBAR] Editor state:",
-                    editor?.state?.doc?.content?.size
-                  );
-                  item.action(editor);
-                  console.log("[TOOLBAR] Action executed for:", item.id);
-                };
-                return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
-                      item.isActive?.(editor) &&
-                        "bg-white/15 text-foreground shadow-sm"
-                    )}
-                    onClick={handleClick}
-                    disabled={item.disabled?.(editor)}
-                    title={item.label}
-                  >
+              {item.component === "ColorPicker" ? (
+                <ColorPicker
+                  value={editor?.getAttributes("textStyle").color}
+                  onChange={(color) =>
+                    editor?.chain().focus().setColor(color).run()
+                  }
+                  icon={
                     <HugeiconsIcon
                       icon={item.icon}
                       className="h-4 w-4"
                       strokeWidth={2}
                     />
-                  </Button>
-                );
-              })}
-            </Fragment>
-          ))}
-
-          {/* Active items from overflow groups - hidden on mobile */}
-          {activeOverflowItems.length > 0 && (
-            <div className="hidden sm:flex items-center">
-              <Separator
-                orientation="vertical"
-                className="mx-1 bg-white/10 h-5"
-              />
-              {activeOverflowItems.map((item) => (
+                  }
+                  title={item.label}
+                  isActive={item.isActive?.(editor)}
+                  className={cn(
+                    "shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
+                    getVisibilityClasses(item.visibleFrom).toolbar
+                  )}
+                />
+              ) : item.component === "MathInput" ? (
+                <MathInput
+                  onInsert={(latex) =>
+                    editor?.chain().focus().insertInlineMath({ latex }).run()
+                  }
+                  icon={
+                    <HugeiconsIcon
+                      icon={item.icon}
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                  }
+                  title={item.label}
+                  isActive={item.isActive?.(editor)}
+                  className={cn(
+                    "shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
+                    getVisibilityClasses(item.visibleFrom).toolbar
+                  )}
+                />
+              ) : item.component === "LinkInput" ? (
+                <LinkInput
+                  editor={editor}
+                  icon={
+                    <HugeiconsIcon
+                      icon={item.icon}
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                  }
+                  title={item.label}
+                  isActive={item.isActive?.(editor)}
+                  className={cn(
+                    "shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
+                    getVisibilityClasses(item.visibleFrom).toolbar
+                  )}
+                />
+              ) : (
                 <Button
-                  key={item.id}
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 shrink-0 rounded-lg cursor-pointer bg-white/15 text-foreground shadow-sm"
+                  className={cn(
+                    "h-8 w-8 shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
+                    item.isActive?.(editor) &&
+                      "bg-white/15 text-foreground shadow-sm",
+                    getVisibilityClasses(item.visibleFrom).toolbar
+                  )}
                   onClick={() => item.action(editor)}
                   disabled={item.disabled?.(editor)}
                   title={item.label}
@@ -166,17 +183,20 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                     strokeWidth={2}
                   />
                 </Button>
-              ))}
-            </div>
-          )}
+              )}
+            </Fragment>
+          ))}
         </div>
 
-        {/* More dropdown for overflow groups */}
-        {overflowGroups.length > 0 && (
+        {/* More dropdown - hidden on 2xl when all tools are visible */}
+        {hasOverflowItems && (
           <>
-            <Separator orientation="vertical" className="mx-1 bg-white/10" />
+            <Separator
+              orientation="vertical"
+              className="mx-1 bg-white/10 2xl:hidden"
+            />
             <DropdownMenu>
-              <DropdownMenuTrigger className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-white/10 hover:text-foreground cursor-pointer text-muted-foreground focus-visible:outline-none transition-colors">
+              <DropdownMenuTrigger className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-white/10 hover:text-foreground cursor-pointer text-muted-foreground focus-visible:outline-none transition-colors 2xl:hidden">
                 <HugeiconsIcon
                   icon={MoreHorizontalIcon}
                   className="h-4 w-4"
@@ -187,30 +207,26 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                 align="center"
                 className="w-48 max-h-80 overflow-y-auto bg-surface-night border-white/10 text-foreground"
               >
-                {overflowGroups.map((group, group_index) => (
-                  <Fragment key={group.id}>
-                    {group_index > 0 && (
-                      <Separator className="my-1 bg-white/10" />
+                {ALL_TOOLBAR_ITEMS.filter(
+                  (item) => item.visibleFrom !== "always"
+                ).map((item) => (
+                  <DropdownMenuItem
+                    key={item.id}
+                    onClick={() => item.action(editor)}
+                    disabled={item.disabled?.(editor)}
+                    className={cn(
+                      "gap-2 cursor-pointer focus:bg-white/10 focus:text-foreground",
+                      item.isActive?.(editor) && "bg-white/15",
+                      getVisibilityClasses(item.visibleFrom).dropdown
                     )}
-                    {group.items.map((item) => (
-                      <DropdownMenuItem
-                        key={item.id}
-                        onClick={() => item.action(editor)}
-                        disabled={item.disabled?.(editor)}
-                        className={cn(
-                          "gap-2 cursor-pointer focus:bg-white/10 focus:text-foreground",
-                          item.isActive?.(editor) && "bg-white/15"
-                        )}
-                      >
-                        <HugeiconsIcon
-                          icon={item.icon}
-                          className="h-4 w-4"
-                          strokeWidth={2}
-                        />
-                        <span>{item.label}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </Fragment>
+                  >
+                    <HugeiconsIcon
+                      icon={item.icon}
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                    <span>{item.label}</span>
+                  </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>

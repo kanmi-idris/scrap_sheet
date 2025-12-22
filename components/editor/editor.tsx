@@ -5,16 +5,12 @@ import { useDebouncedCallback } from "@/lib/hooks/use-debounced-callback";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { calculateWordCount } from "@/lib/utils";
 import {
-  EditorBubble,
   EditorContent,
   EditorInstance,
   handleCommandNavigation,
-  Placeholder,
   type JSONContent,
 } from "novel";
-import { useMemo } from "react";
 import { defaultExtensions } from "./extensions";
-import { AISelector } from "./selectors/ai-selector";
 
 interface EditorProps {
   initialValue?: JSONContent;
@@ -35,19 +31,6 @@ export default function Editor({
   const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
   const setEditorInstance = useEditorStore((s) => s.setEditorInstance);
 
-  const extensions = useMemo(() => {
-    const placeholderExt = Placeholder.configure({
-      placeholder: isLoading ? "Fetching your document..." : "Start writing...",
-    });
-
-    // Replace default placeholder with our dynamic one
-    const filteredExtensions = defaultExtensions.filter(
-      (ext) => ext.name !== "placeholder"
-    );
-
-    return [...filteredExtensions, placeholderExt];
-  }, [isLoading]);
-
   const debouncedUpdates = useDebouncedCallback(
     ({ editor }: { editor: EditorInstance }) => {
       const json = editor.getJSON();
@@ -65,7 +48,7 @@ export default function Editor({
     <EditorContent
       immediatelyRender={false}
       initialContent={initialValue}
-      extensions={extensions}
+      extensions={defaultExtensions}
       onUpdate={debouncedUpdates}
       onCreate={({ editor }) => setEditorInstance(editor)}
       editorProps={{
@@ -78,17 +61,6 @@ export default function Editor({
         editable: () => editable,
       }}
       className="relative w-full h-full"
-    >
-      <EditorBubble
-        tippyOptions={{
-          placement: "top",
-          animation: "shift-away",
-          duration: 200,
-        }}
-        className="flex w-fit max-w-[90vw] overflow-hidden rounded-lg border-none bg-transparent shadow-none"
-      >
-        <AISelector />
-      </EditorBubble>
-    </EditorContent>
+    ></EditorContent>
   );
 }

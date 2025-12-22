@@ -1,30 +1,87 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useEditorStore } from "@/lib/store/editor-store";
 import {
   AiBrain01Icon,
   Edit02Icon,
+  MagicWand01Icon,
+  SearchAreaIcon,
   TextCheckIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { EditorInstance } from "novel";
+import { useEffect, useState } from "react";
 
 interface AIAction {
   id: string;
   label: string;
   icon: typeof TextCheckIcon;
+  command: (editor: EditorInstance) => void;
 }
 
-const AI_ACTIONS: AIAction[] = [
-  { id: "proofread", label: "Proofread", icon: TextCheckIcon },
-  { id: "grammar", label: "Fix Grammar", icon: Edit02Icon },
-  { id: "paraphrase", label: "Paraphrase", icon: AiBrain01Icon },
+// ALWAYS visible
+const CONSTANT_ACTIONS: AIAction[] = [
+  {
+    id: "proofread",
+    label: "Proofread",
+    icon: SearchAreaIcon,
+    command: (editor) => console.log("Proofread triggered"),
+  },
+  {
+    id: "grammar",
+    label: "Grammar",
+    icon: TextCheckIcon,
+    command: (editor) => console.log("Fix Grammar triggered"),
+  },
+  {
+    id: "paraphrase",
+    label: "Paraphrase",
+    icon: AiBrain01Icon,
+    command: (editor) => console.log("Paraphrase triggered"),
+  },
+];
+
+// only appear when text is highlighted
+const CONTEXTUAL_ACTIONS: AIAction[] = [
+  {
+    id: "improve",
+    label: "Improve",
+    icon: MagicWand01Icon,
+    command: (editor) => console.log("Improve Writing triggered"),
+  },
+  {
+    id: "shorten",
+    label: "Shorten",
+    icon: Edit02Icon,
+    command: (editor) => console.log("Shorten triggered"),
+  },
 ];
 
 export function AIActionToolbar() {
-  const onAction = (actionId: string) => {
-    console.log("AI action:", actionId);
-  };
+  const editor = useEditorStore((s) => s.editorInstance);
+  const [hasSelection, setHasSelection] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const checkSelection = () => {
+      setHasSelection(!editor.state.selection.empty);
+    };
+
+    // Initial check
+    checkSelection();
+
+    editor.on("selectionUpdate", checkSelection);
+    editor.on("update", checkSelection);
+
+    return () => {
+      editor.off("selectionUpdate", checkSelection);
+      editor.off("update", checkSelection);
+    };
+  }, [editor]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20, scale: 0.95 }}
@@ -37,23 +94,66 @@ export function AIActionToolbar() {
           AI Tools
         </span>
       </div>
-      {AI_ACTIONS.map((action, i) => (
-        <div key={action.id}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-surface-night/5 active:bg-surface-night/5 transition-all px-3 rounded-xl cursor-pointer group relative overflow-hidden"
-            onClick={() => onAction(action.id)}
-          >
-            <HugeiconsIcon
-              icon={action.icon}
-              className="size-4 shrink-0 transition-transform group-hover:scale-110"
-              strokeWidth={2}
-            />
-            <span className="text-xs font-medium">{action.label}</span>
-          </Button>
-        </div>
+
+      {/* Constant Actions - Always Visible */}
+      {CONSTANT_ACTIONS.map((action) => (
+        <Button
+          key={action.id}
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-surface-night/5 active:bg-surface-night/5 transition-all px-3 rounded-xl cursor-pointer group relative overflow-hidden"
+          onClick={() => editor && action.command(editor)}
+        >
+          <HugeiconsIcon
+            icon={action.icon}
+            className="size-4 shrink-0 transition-transform group-hover:scale-110"
+            strokeWidth={2}
+          />
+          <span className="text-xs font-medium">{action.label}</span>
+        </Button>
       ))}
+
+      {/* Contextual Actions - Only on Selection */}
+      <AnimatePresence>
+        {hasSelection && (
+          <>
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+              className="border-t border-white/5 my-1"
+            />
+            {CONTEXTUAL_ACTIONS.map((action, index) => (
+              <motion.div
+                key={action.id}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{
+                  duration: 0.15,
+                  delay: index * 0.05,
+                  ease: "easeOut",
+                }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-surface-night/5 active:bg-surface-night/5 transition-all px-3 rounded-xl cursor-pointer group relative overflow-hidden"
+                  onClick={() => editor && action.command(editor)}
+                >
+                  <HugeiconsIcon
+                    icon={action.icon}
+                    className="size-4 shrink-0 transition-transform group-hover:scale-110"
+                    strokeWidth={2}
+                  />
+                  <span className="text-xs font-medium">{action.label}</span>
+                </Button>
+              </motion.div>
+            ))}
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -47,7 +47,7 @@ export function DocHistoryCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="absolute right-6 top-4 w-64 max-h-[calc(100vh-120px)] flex flex-col rounded-2xl border border-muted-foreground/30 bg-background shadow-lg z-50 overflow-hidden"
+          className="fixed right-6 top-24 w-72 max-h-[calc(100vh-176px)] flex flex-col rounded-2xl border border-muted-foreground/30 bg-background shadow-lg z-50 overflow-hidden"
         >
           {/* Top Action Area - Only visible if version selected */}
           {selectedVersion && (

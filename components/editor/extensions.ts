@@ -19,7 +19,6 @@ import { cx } from "class-variance-authority";
 import "katex/dist/katex.min.css";
 import {
   HorizontalRule,
-  Placeholder,
   StarterKit,
   TaskItem,
   TaskList,
@@ -86,17 +85,30 @@ const taskItem = TaskItem.configure({
   nested: true,
 });
 
-const placeholder = Placeholder.configure({
-  placeholder: "Start writing...",
-});
-
 const link = TiptapLink.configure({
-  openOnClick: false,
+  openOnClick: true,
   autolink: true,
   defaultProtocol: "https",
   HTMLAttributes: {
     class: cx(
-      "text-muted-foreground underline underline-offset-[3px] hover:text-primary transition-colors cursor-pointer"
+      [
+        // Color + weight
+        "text-sky-400/95 visited:text-sky-400/80 hover:text-sky-300",
+        "font-medium",
+
+        // Underline that feels less harsh
+        "underline underline-offset-4 decoration-sky-400/35 decoration-1",
+        "hover:decoration-sky-300/60",
+
+        // Hover/focus affordance
+        "rounded-sm px-0.5 -mx-0.5",
+        "hover:bg-sky-500/10",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30",
+
+        // Smooth transitions
+        "transition-[color,background-color,text-decoration-color] duration-150",
+        "cursor-pointer",
+      ].join(" ")
     ),
   },
 });
@@ -120,7 +132,6 @@ const mathematics = Mathematics.configure({
 
 export const defaultExtensions = [
   starterKit,
-  placeholder,
   link,
   image,
   taskList,
