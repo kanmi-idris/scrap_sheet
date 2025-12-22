@@ -30,7 +30,19 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await triplit.delete("documents", id);
+      const versionsToDelete = await triplit.fetch(
+        triplit.query("versions").Where("documentId", "=", id)
+      );
+
+      await triplit.transact(async (tx) => {
+        if (versionsToDelete) {
+          for (const version of versionsToDelete) {
+            await tx.delete("versions", version.id);
+          }
+        }
+        await tx.delete("documents", id);
+      });
+
       toast.success("Document deleted successfully");
     } catch (e) {
       console.error("Failed to delete document", e);

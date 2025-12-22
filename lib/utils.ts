@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { JSONContent } from "novel";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -35,4 +36,38 @@ export function formatRelativeTime(date: Date | string | number): string {
   if (diffWeek < 4) return `${diffWeek}w ago`;
   if (diffMonth < 12) return `${diffMonth}mo ago`;
   return `${diffYear}y ago`;
+}
+
+/**
+ * Format countdown as mm:ss
+ */
+export function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+// Helper to extract text from JSONContent for word count
+export function extractTextFromContent(content: JSONContent | null): string {
+  if (!content) return "";
+
+  let text = "";
+
+  function traverse(node: any) {
+    if (node.text) {
+      text += node.text + " ";
+    }
+    if (node.content && Array.isArray(node.content)) {
+      node.content.forEach(traverse);
+    }
+  }
+
+  traverse(content);
+  return text.trim();
+}
+
+export function calculateWordCount(content: JSONContent | null): number {
+  const text = extractTextFromContent(content);
+  if (!text) return 0;
+  return text.split(/\s+/).filter(Boolean).length;
 }
