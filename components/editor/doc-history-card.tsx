@@ -1,6 +1,7 @@
+import { Button } from "@/components/ui/button";
 import { SECONDS_IN_MONTH, VERSION_VALIDITY_SECONDS } from "@/lib/constants";
 import { useEditorStore } from "@/lib/store/editor-store";
-import { cn } from "@/lib/utils";
+import { cn, formatDateShort, formatTime12Hour } from "@/lib/utils";
 import { Version } from "@/triplit/schema";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -22,11 +23,7 @@ export function DocHistoryCard({
 
   // Group versions by date (e.g. "Dec 20")
   const groupedHistory = history.reduce((acc, version) => {
-    const date = new Date(version.timestamp);
-    const dateStr = date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+    const dateStr = formatDateShort(version.timestamp);
 
     if (!acc[dateStr]) {
       acc[dateStr] = [];
@@ -57,15 +54,17 @@ export function DocHistoryCard({
           {/* Top Action Area - Only visible if version selected */}
           {selectedVersion && (
             <div className="p-3 border-b border-muted-foreground/10 bg-muted/20">
-              <button
+              <Button
                 onClick={() => {
                   setVersionBeingPreviewed(null);
                   restoreVersion(documentId, selectedVersion);
                 }}
-                className="w-full py-2 px-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                className="w-full"
+                size="default"
+                variant="default"
               >
                 Restore this version
-              </button>
+              </Button>
             </div>
           )}
 
@@ -91,23 +90,21 @@ export function DocHistoryCard({
                         const isSelected =
                           versionBeingPreviewed?.id === version.id;
                         return (
-                          <button
+                          <Button
                             key={version.id}
                             onClick={() => setVersionBeingPreviewed(version)}
+                            variant="ghost"
                             className={cn(
-                              "w-full text-left px-3 py-2.5 rounded-xl border transition-all text-sm group flex items-center justify-between",
+                              "w-full justify-start px-3 py-2.5 h-auto rounded-xl border transition-all text-sm",
                               isSelected
-                                ? "bg-accent border-primary/50 text-foreground ring-1 ring-primary/20"
-                                : "border-muted-foreground/30 hover:bg-muted text-muted-foreground hover:text-foreground"
+                                ? "bg-primary/10 border-primary/40 text-foreground ring-1 ring-primary/30"
+                                : "border-white/10 hover:bg-white/5 hover:border-white/20 text-muted-foreground hover:text-foreground"
                             )}
                           >
-                            <span className="truncate flex-1 pr-2">
-                              {new Date(version.timestamp).toLocaleTimeString(
-                                "en-US",
-                                { hour: "numeric", minute: "2-digit" }
-                              )}
+                            <span className="truncate flex-1 text-left">
+                              {formatTime12Hour(version.timestamp)}
                             </span>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

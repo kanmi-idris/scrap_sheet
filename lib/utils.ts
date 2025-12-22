@@ -71,3 +71,23 @@ export function calculateWordCount(content: JSONContent | null): number {
   if (!text) return 0;
   return text.split(/\s+/).filter(Boolean).length;
 }
+
+/**
+ * Format time as 12-hour format (e.g., "4:14 PM")
+ */
+export function formatTime12Hour(date: Date | string | number): string {
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Format date without year (e.g., "Dec 22")
+ */
+export function formatDateShort(date: Date | string | number): string {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
