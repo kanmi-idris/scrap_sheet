@@ -71,7 +71,8 @@ export function DocHistoryCard({
 
           <div className="p-4 overflow-y-auto flex-1">
             <p className="text-[10px] text-muted-foreground mb-4 leading-tight opacity-70">
-              Note: All versions are auto deleted after {validityMonths} months.
+              Note: All versions older than {validityMonths} months are auto
+              deleted.
             </p>
 
             <div className="space-y-5">
