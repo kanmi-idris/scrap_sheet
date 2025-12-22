@@ -1,3 +1,4 @@
+import { DEFAULT_FONT_FAMILY } from "@/lib/constants";
 import { Schema as TriplitSchema, type Entity } from "@triplit/client";
 
 const ScrapSheetStorageSchema = TriplitSchema.Collections({
@@ -23,6 +24,7 @@ const ScrapSheetStorageSchema = TriplitSchema.Collections({
       documentId: TriplitSchema.String(),
       content: TriplitSchema.String({ default: "" }),
       title: TriplitSchema.String(),
+      fontFamily: TriplitSchema.String({ default: DEFAULT_FONT_FAMILY }),
       timestamp: TriplitSchema.Date({ default: TriplitSchema.Default.now() }),
     }),
   },

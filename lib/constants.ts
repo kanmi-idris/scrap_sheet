@@ -9,8 +9,13 @@ export const AUTOSAVE_INTERVAL_MS = 1000; // Interval between saves during conti
 export const TYPING_INACTIVITY_MS = 2000; // Time until is user considered "not typing"
 export const VERSION_ROTATION_MS = 5 * 60 * 1000; // Create new version snapshot every 5 minutes
 
+export const SECONDS_IN_MONTH = 30 * 24 * 60 * 60; // 30 days = 1 month
+export const VERSION_VALIDITY_SECONDS = 3 * SECONDS_IN_MONTH; // 3 months (90 days) before auto-cleanup
+export const MILLISECONDS_IN_DAY = 1000 * 60 * 60 * 24; // Milliseconds in one day
+
 export const VISIBLE_TOOLBAR_GROUPS_COUNT = 2; // Number of toolbar groups visible in editor header before overflow
 
+export const DEFAULT_FONT_FAMILY = "Arial, sans-serif";
 export const FONTS = [
   { name: "Arial", value: "Arial, sans-serif" },
   { name: "Arial Narrow", value: "'Arial Narrow', Arial, sans-serif" },

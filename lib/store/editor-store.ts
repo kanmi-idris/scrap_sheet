@@ -5,12 +5,16 @@
 import { triplit } from "@/triplit/client";
 import { Version } from "@/triplit/schema";
 import { EditorInstance, JSONContent } from "novel";
+import { toast } from "sonner";
 import { create } from "zustand";
 import {
   AUTOSAVE_INTERVAL_MS,
+  DEFAULT_FONT_FAMILY,
   DOC_PREVIEW_LENGTH,
+  MILLISECONDS_IN_DAY,
   TYPING_INACTIVITY_MS,
   VERSION_ROTATION_MS,
+  VERSION_VALIDITY_SECONDS,
 } from "../constants";
 import { calculateWordCount, extractTextFromContent } from "../utils";
 
@@ -59,6 +63,10 @@ interface EditorState {
 
   // Document loading
   hydrateFromVersion: (version: Version) => void;
+  cleanupOldVersions: (
+    documentId: string,
+    allVersions: Version[]
+  ) => Promise<void>;
 
   // Reset
   reset: () => void;
@@ -72,7 +80,7 @@ const initialState = {
   isResetting: false,
   isHydrated: false,
   lastSavedAt: null as number | null,
-  fontFamily: "Arial, sans-serif",
+  fontFamily: DEFAULT_FONT_FAMILY,
   wordCount: 0,
   isHistoryOpen: false,
   versionCurrentlyInUse: null as Version | null,
@@ -105,6 +113,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       set({
         title: version.title || "Untitled Document",
         content: parsedContent,
+        fontFamily: version.fontFamily || DEFAULT_FONT_FAMILY,
         wordCount: calculateWordCount(parsedContent),
         versionCurrentlyInUse: version,
         lastVersionRotationAt: new Date(version.timestamp).getTime(),
@@ -123,6 +132,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       set({
         title: version.title || "Untitled Document",
         content: { type: "doc", content: [] },
+        fontFamily: version.fontFamily || DEFAULT_FONT_FAMILY,
         wordCount: 0,
         versionCurrentlyInUse: version,
         isHydrated: true,
@@ -240,6 +250,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
             documentId,
             content: contentString,
             title: title || "Untitled Document",
+            fontFamily: get().fontFamily,
             timestamp: now,
           });
         } else {
@@ -254,6 +265,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
           await tx.update("versions", versionCurrentlyInUse.id, (version) => {
             version.content = contentString;
             version.title = title || "Untitled Document";
+            version.fontFamily = get().fontFamily;
             version.timestamp = now;
           });
 
@@ -261,6 +273,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
             ...versionCurrentlyInUse,
             content: contentString,
             title: title || "Untitled Document",
+            fontFamily: get().fontFamily,
             timestamp: now,
           };
         }
@@ -397,6 +410,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         documentId,
         content: contentString,
         title: title || "Untitled Document",
+        fontFamily: get().fontFamily,
         timestamp: now,
       });
 
@@ -448,6 +462,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       set({
         content: restoredContent as JSONContent,
         title: version.title || "Untitled Document",
+        fontFamily: version.fontFamily || DEFAULT_FONT_FAMILY,
         isSaved: false,
         isUpdatingDataStore: true,
       });
@@ -475,6 +490,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
           documentId,
           content: contentString,
           title: version.title || "Untitled Document",
+          fontFamily: version.fontFamily || DEFAULT_FONT_FAMILY,
           timestamp: now,
         });
       });
@@ -504,6 +520,82 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       set({ isSaved: false });
     } finally {
       set({ isUpdatingDataStore: false });
+    }
+  },
+
+  cleanupOldVersions: async (documentId: string, allVersions: Version[]) => {
+    const { versionCurrentlyInUse } = get();
+    console.log(
+      "[CLEANUP] Starting cleanup for documentId:",
+      documentId,
+      "Total versions:",
+      allVersions.length
+    );
+
+    // Guard: Don't run if resetting
+    if (isResetting) {
+      console.warn("[CLEANUP] Aborted - reset in progress");
+      return;
+    }
+
+    try {
+      // Calculate cutoff timestamp
+      const cutoffDate = new Date();
+      cutoffDate.setSeconds(cutoffDate.getSeconds() - VERSION_VALIDITY_SECONDS);
+      const cutoffTimestamp = cutoffDate.getTime();
+
+      console.log("[CLEANUP] Cutoff date:", cutoffDate.toISOString());
+
+      // Filter versions to delete: older than cutoff AND not the working version
+      const versionsToDelete = allVersions.filter((version) => {
+        const versionTimestamp = new Date(version.timestamp).getTime();
+        const isOld = versionTimestamp < cutoffTimestamp;
+        const isWorkingVersion = versionCurrentlyInUse?.id === version.id;
+        const shouldDelete =
+          isOld && !isWorkingVersion && version.documentId === documentId;
+
+        if (shouldDelete) {
+          console.log("[CLEANUP] Marking for deletion:", {
+            id: version.id,
+            timestamp: new Date(version.timestamp).toISOString(),
+            age:
+              Math.floor(
+                (Date.now() - versionTimestamp) / MILLISECONDS_IN_DAY
+              ) + " days",
+          });
+        }
+
+        return shouldDelete;
+      });
+
+      if (versionsToDelete.length === 0) {
+        console.log("[CLEANUP] No old versions to delete");
+        return;
+      }
+
+      console.log(`[CLEANUP] Deleting ${versionsToDelete.length} old versions`);
+
+      await triplit.transact(async (tx) => {
+        for (const version of versionsToDelete) {
+          await tx.delete("versions", version.id);
+        }
+      });
+
+      console.log(
+        "[CLEANUP] Successfully deleted",
+        versionsToDelete.length,
+        "versions"
+      );
+
+      // Show success toast
+      toast.success(
+        `Cleaned up ${versionsToDelete.length} old version${
+          versionsToDelete.length > 1 ? "s" : ""
+        }`
+      );
+    } catch (error: unknown) {
+      console.error("[CLEANUP] Failed:", error);
+      // Non-critical failure - don't throw, just log
     }
   },
 

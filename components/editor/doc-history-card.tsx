@@ -1,3 +1,4 @@
+import { SECONDS_IN_MONTH, VERSION_VALIDITY_SECONDS } from "@/lib/constants";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { cn } from "@/lib/utils";
 import { Version } from "@/triplit/schema";
@@ -39,6 +40,10 @@ export function DocHistoryCard({
     (v) => v.id === versionBeingPreviewed?.id
   );
 
+  const validityMonths = Math.floor(
+    VERSION_VALIDITY_SECONDS / SECONDS_IN_MONTH
+  );
+
   return (
     <AnimatePresence>
       {isHistoryOpen && (
@@ -66,7 +71,7 @@ export function DocHistoryCard({
 
           <div className="p-4 overflow-y-auto flex-1">
             <p className="text-[10px] text-muted-foreground mb-4 leading-tight opacity-70">
-              Note: All versions are auto deleted after 5 months.
+              Note: All versions are auto deleted after {validityMonths} months.
             </p>
 
             <div className="space-y-5">

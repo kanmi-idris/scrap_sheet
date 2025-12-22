@@ -159,14 +159,7 @@
   }
   
   /* Global scrollbar hiding */
-  * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-  
-  *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
+
 }
 
 @layer utilities {
@@ -185,6 +178,12 @@
 .ProseMirror {
   @apply p-12 px-8 sm:px-12;
   min-height: 500px;
+}
+
+/* Performance optimization: only paint visible content */
+.ProseMirror > * {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px; /* Placeholder height for off-screen elements */
 }
 
 /* Headings: explicit hierarchy so heading toggles are visible */

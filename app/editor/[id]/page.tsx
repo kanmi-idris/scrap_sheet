@@ -34,6 +34,7 @@ export default function EditorPage({
   const isHydrated = useEditorStore((s) => s.isHydrated);
 
   const hydrateFromVersion = useEditorStore((s) => s.hydrateFromVersion);
+  const cleanupOldVersions = useEditorStore((s) => s.cleanupOldVersions);
   const reset = useEditorStore((s) => s.reset);
 
   // Triplit query for versions (source of truth)
@@ -80,8 +81,22 @@ export default function EditorPage({
     if (latestVersion && !fetchingVersions && !isHydrated) {
       console.log("[PAGE] Calling hydrateFromVersion (initial load)...");
       hydrateFromVersion(latestVersion);
+
+      // Fire-and-forget; cleanup after hydration completes to not block the editor load
+      console.log("[PAGE] Triggering version cleanup...");
+      cleanupOldVersions(documentId, versionsList).catch((error) => {
+        console.error("[PAGE] Cleanup failed (non-critical):", error);
+      });
     }
-  }, [latestVersion, fetchingVersions, isHydrated, hydrateFromVersion]);
+  }, [
+    latestVersion,
+    fetchingVersions,
+    isHydrated,
+    hydrateFromVersion,
+    cleanupOldVersions,
+    documentId,
+    versionsList,
+  ]);
 
   // Compute display content based on preview mode or hydration state
   const displayContent = useMemo(() => {
