@@ -9,18 +9,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { TOOLBAR_GROUPS } from "@/lib/config/editor-toolbar-config";
+import { VISIBLE_TOOLBAR_GROUPS_COUNT } from "@/lib/constants";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import {
   ArrowLeft01Icon,
   Clock01Icon,
   MoreHorizontalIcon,
-  Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useEditor } from "novel";
 import { Fragment } from "react";
 import { FontSelector } from "./selectors/font-selector";
 
@@ -28,19 +27,17 @@ interface EditorHeaderProps {
   documentId: string;
 }
 
-const VISIBLE_GROUPS_COUNT = 2;
-
 export function EditorHeader({ documentId }: EditorHeaderProps) {
-  const { editor } = useEditor();
+  // Get editor instance from Zustand (set by EditorContent onCreate)
+  const editor = useEditorStore((s) => s.editorInstance);
   const title = useEditorStore((s) => s.title);
   const isHistoryOpen = useEditorStore((s) => s.isHistoryOpen);
-  const isSaved = useEditorStore((s) => s.isSaved);
   const isUpdatingDataStore = useEditorStore((s) => s.isUpdatingDataStore);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
   const wordCount = useEditorStore((s) => s.wordCount);
 
-  const visibleGroups = TOOLBAR_GROUPS.slice(0, VISIBLE_GROUPS_COUNT);
-  const overflowGroups = TOOLBAR_GROUPS.slice(VISIBLE_GROUPS_COUNT);
+  const visibleGroups = TOOLBAR_GROUPS.slice(0, VISIBLE_TOOLBAR_GROUPS_COUNT);
+  const overflowGroups = TOOLBAR_GROUPS.slice(VISIBLE_TOOLBAR_GROUPS_COUNT);
   const activeOverflowItems = overflowGroups.flatMap((group) =>
     group.items.filter((item) => item.isActive?.(editor))
   );
@@ -50,23 +47,9 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
   const markUserTyping = useEditorStore((s) => s.markUserTyping);
   const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
 
-  // Debug: Log save state changes
-  console.log(
-    "[HEADER] Render. isSaved:",
-    isSaved,
-    "isUpdatingDataStore:",
-    isUpdatingDataStore,
-    "lastSavedAt:",
-    lastSavedAt
-  );
-
   const handleTitleChange = (nextTitle: string) => {
     setTitle(nextTitle);
     markUserTyping();
-    initiateAutosave(documentId);
-  };
-
-  const handleManualSave = () => {
     initiateAutosave(documentId);
   };
 
@@ -120,34 +103,53 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                   className=" mx-1 bg-white/10"
                 />
               )}
-              {group.items.map((item) => (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
-                    item.isActive?.(editor) &&
-                      "bg-white/15 text-foreground shadow-sm"
-                  )}
-                  onClick={() => item.action(editor)}
-                  disabled={item.disabled?.(editor)}
-                  title={item.label}
-                >
-                  <HugeiconsIcon
-                    icon={item.icon}
-                    className="h-4 w-4"
-                    strokeWidth={2}
-                  />
-                </Button>
-              ))}
+              {group.items.map((item) => {
+                const handleClick = () => {
+                  console.log("[TOOLBAR] Button clicked:", item.id);
+                  console.log(
+                    "[TOOLBAR] Editor instance:",
+                    editor ? "exists" : "NULL"
+                  );
+                  console.log("[TOOLBAR] Editor editable:", editor?.isEditable);
+                  console.log(
+                    "[TOOLBAR] Editor state:",
+                    editor?.state?.doc?.content?.size
+                  );
+                  item.action(editor);
+                  console.log("[TOOLBAR] Action executed for:", item.id);
+                };
+                return (
+                  <Button
+                    key={item.id}
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 shrink-0 hover:bg-white/10 hover:text-foreground rounded-lg cursor-pointer transition-colors text-muted-foreground",
+                      item.isActive?.(editor) &&
+                        "bg-white/15 text-foreground shadow-sm"
+                    )}
+                    onClick={handleClick}
+                    disabled={item.disabled?.(editor)}
+                    title={item.label}
+                  >
+                    <HugeiconsIcon
+                      icon={item.icon}
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                  </Button>
+                );
+              })}
             </Fragment>
           ))}
 
-          {/* Active items from overflow groups - always visible */}
+          {/* Active items from overflow groups - hidden on mobile */}
           {activeOverflowItems.length > 0 && (
-            <>
-              <Separator orientation="vertical" className=" mx-1 bg-white/10" />
+            <div className="hidden sm:flex items-center">
+              <Separator
+                orientation="vertical"
+                className="mx-1 bg-white/10 h-5"
+              />
               {activeOverflowItems.map((item) => (
                 <Button
                   key={item.id}
@@ -165,7 +167,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                   />
                 </Button>
               ))}
-            </>
+            </div>
           )}
         </div>
 
@@ -228,10 +230,20 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
           className="bg-white/10 hidden sm:block"
         />
 
-        {/* Save Status */}
+        {/* Save Status (autosave only - no manual save button) */}
         <div className="relative h-8 flex items-center justify-end min-w-20">
           <AnimatePresence mode="wait">
-            {!isUpdatingDataStore && isSaved ? (
+            {isUpdatingDataStore ? (
+              <motion.div
+                key="saving"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="flex items-center gap-1.5 text-muted-foreground"
+              >
+                <span className="text-xs">Saving…</span>
+              </motion.div>
+            ) : lastSavedAt ? (
               <motion.div
                 key="saved"
                 initial={{ opacity: 0, y: 5 }}
@@ -239,32 +251,12 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
                 exit={{ opacity: 0, y: -5 }}
                 className="flex items-center gap-1.5 text-emerald-500"
               >
-                <HugeiconsIcon
-                  icon={Tick01Icon}
-                  className="h-4 w-4"
-                  strokeWidth={2.5}
-                />
                 <span className="text-xs font-medium">Saved</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key={isUpdatingDataStore ? "saving" : "save"}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                onClick={handleManualSave}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors group"
-              >
-                <span className="text-xs group-hover:underline decoration-white/30 underline-offset-2">
-                  {isUpdatingDataStore ? "Saving…" : "Save"}
+                <span className="hidden sm:inline font-mono text-[10px] opacity-60 tabular-nums">
+                  {formatRelativeTime(lastSavedAt)}
                 </span>
-                {lastSavedAt && !isUpdatingDataStore && (
-                  <span className="hidden sm:inline font-mono text-[10px] opacity-40 tabular-nums bg-white/5 px-1 rounded-sm">
-                    {formatRelativeTime(lastSavedAt)}
-                  </span>
-                )}
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </div>
 

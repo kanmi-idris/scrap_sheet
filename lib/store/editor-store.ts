@@ -4,14 +4,15 @@
 
 import { triplit } from "@/triplit/client";
 import { Version } from "@/triplit/schema";
-import { JSONContent } from "novel";
+import { EditorInstance, JSONContent } from "novel";
 import { create } from "zustand";
-import { DOC_PREVIEW_LENGTH } from "../constants";
+import {
+  AUTOSAVE_INTERVAL_MS,
+  DOC_PREVIEW_LENGTH,
+  TYPING_INACTIVITY_MS,
+  VERSION_ROTATION_MS,
+} from "../constants";
 import { calculateWordCount, extractTextFromContent } from "../utils";
-
-const AUTOSAVE_INTERVAL_MS = 500;
-const TYPING_INACTIVITY_THRESHOLD_MS = 2000; // Stop autosave cycle after 2s of no typing
-const VERSION_ROTATION_MS = 5 * 60 * 1000; // Create new version snapshot every 5 minutes
 
 let autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
 let typingInactivityTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -37,6 +38,7 @@ interface EditorState {
   fontFamily: string;
   wordCount: number;
   isHistoryOpen: boolean;
+  editorInstance: EditorInstance | null;
 
   // Setters
   setTitle: (title: string) => void;
@@ -45,6 +47,7 @@ interface EditorState {
   setWordCount: (wordCount: number) => void;
   setIsHistoryOpen: (isOpen: boolean) => void;
   setVersionBeingPreviewed: (version: Version | null) => void;
+  setEditorInstance: (editor: EditorInstance | null) => void;
 
   // Autosave orchestration
   initiateAutosave: (documentId: string) => void;
@@ -76,6 +79,7 @@ const initialState = {
   versionBeingPreviewed: null as Version | null,
   isUserCurrentlyTyping: false,
   lastVersionRotationAt: null as number | null,
+  editorInstance: null as EditorInstance | null,
 };
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -88,6 +92,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setIsHistoryOpen: (isOpen) => set({ isHistoryOpen: isOpen }),
   setVersionBeingPreviewed: (version) =>
     set({ versionBeingPreviewed: version }),
+  setEditorInstance: (editor) => set({ editorInstance: editor }),
 
   hydrateFromVersion: (version: Version) => {
     console.log("[HYDRATE] Starting hydration...");
@@ -138,7 +143,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     typingInactivityTimeout = setTimeout(() => {
       console.log("[TYPING] User stopped typing (inactivity timeout)");
       set({ isUserCurrentlyTyping: false });
-    }, TYPING_INACTIVITY_THRESHOLD_MS);
+    }, TYPING_INACTIVITY_MS);
   },
 
   initiateAutosave: (documentId: string) => {

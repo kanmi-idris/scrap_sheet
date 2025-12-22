@@ -1,5 +1,6 @@
 "use client";
 
+import { EDITOR_DEBOUNCE_MS } from "@/lib/constants";
 import { useDebouncedCallback } from "@/lib/hooks/use-debounced-callback";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { calculateWordCount } from "@/lib/utils";
@@ -7,7 +8,6 @@ import {
   EditorBubble,
   EditorContent,
   EditorInstance,
-  EditorRoot,
   handleCommandNavigation,
   Placeholder,
   type JSONContent,
@@ -33,6 +33,7 @@ export default function Editor({
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const markUserTyping = useEditorStore((s) => s.markUserTyping);
   const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
+  const setEditorInstance = useEditorStore((s) => s.setEditorInstance);
 
   const extensions = useMemo(() => {
     const placeholderExt = Placeholder.configure({
@@ -57,38 +58,37 @@ export default function Editor({
       markUserTyping();
       initiateAutosave(documentId);
     },
-    500
+    EDITOR_DEBOUNCE_MS
   );
 
   return (
-    <EditorRoot>
-      <EditorContent
-        immediatelyRender={false}
-        initialContent={initialValue}
-        extensions={extensions}
-        onUpdate={debouncedUpdates}
-        editorProps={{
-          handleDOMEvents: {
-            keydown: (_view, event) => handleCommandNavigation(event),
-          },
-          attributes: {
-            class: `prose prose-lg dark:prose-invert prose-headings:font-title focus:outline-none max-w-full min-h-[400px] p-6 rounded-none`,
-          },
-          editable: () => editable,
+    <EditorContent
+      immediatelyRender={false}
+      initialContent={initialValue}
+      extensions={extensions}
+      onUpdate={debouncedUpdates}
+      onCreate={({ editor }) => setEditorInstance(editor)}
+      editorProps={{
+        handleDOMEvents: {
+          keydown: (_view, event) => handleCommandNavigation(event),
+        },
+        attributes: {
+          class: `prose prose-lg dark:prose-invert prose-headings:font-title focus:outline-none max-w-full min-h-[400px] p-6 rounded-none`,
+        },
+        editable: () => editable,
+      }}
+      className="relative w-full h-full"
+    >
+      <EditorBubble
+        tippyOptions={{
+          placement: "top",
+          animation: "shift-away",
+          duration: 200,
         }}
-        className="relative w-full h-full"
+        className="flex w-fit max-w-[90vw] overflow-hidden rounded-lg border-none bg-transparent shadow-none"
       >
-        <EditorBubble
-          tippyOptions={{
-            placement: "top",
-            animation: "shift-away",
-            duration: 200,
-          }}
-          className="flex w-fit max-w-[90vw] overflow-hidden rounded-lg border-none bg-transparent shadow-none"
-        >
-          <AISelector />
-        </EditorBubble>
-      </EditorContent>
-    </EditorRoot>
+        <AISelector />
+      </EditorBubble>
+    </EditorContent>
   );
 }

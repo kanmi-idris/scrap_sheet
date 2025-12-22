@@ -3,6 +3,14 @@ export const SITE_NAME = "Scrap_sheet";
 export const SITE_DESCRIPTION =
   "The agentic workspace where ideas become structured thought.";
 export const DOC_PREVIEW_LENGTH = 100;
+
+export const EDITOR_DEBOUNCE_MS = 300; // Delay before saving after user stops typing
+export const AUTOSAVE_INTERVAL_MS = 1000; // Interval between saves during continuous typing
+export const TYPING_INACTIVITY_MS = 2000; // Time until is user considered "not typing"
+export const VERSION_ROTATION_MS = 5 * 60 * 1000; // Create new version snapshot every 5 minutes
+
+export const VISIBLE_TOOLBAR_GROUPS_COUNT = 2; // Number of toolbar groups visible in editor header before overflow
+
 export const FONTS = [
   { name: "Arial", value: "Arial, sans-serif" },
   { name: "Arial Narrow", value: "'Arial Narrow', Arial, sans-serif" },

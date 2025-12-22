@@ -18,6 +18,7 @@ import { useEditorStore } from "@/lib/store/editor-store";
 import { triplit } from "@/triplit/client";
 import { useQuery } from "@triplit/react";
 import Link from "next/link";
+import { EditorRoot } from "novel";
 import { use, useEffect, useMemo } from "react";
 
 export default function EditorPage({
@@ -124,7 +125,7 @@ export default function EditorPage({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <Link href="/dashboard">
-              <AlertDialogAction className="w-full">
+              <AlertDialogAction className="w-full outline-none border-none focus-visible:ring-0">
                 Go to Dashboard
               </AlertDialogAction>
             </Link>
@@ -135,55 +136,57 @@ export default function EditorPage({
   }
 
   return (
-    <div className="h-full flex flex-col relative">
-      <EditorHeader documentId={documentId} />
+    <EditorRoot>
+      <div className="h-full flex flex-col relative">
+        <EditorHeader documentId={documentId} />
 
-      {/* Main content area */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Preview Banner */}
-        {versionBeingPreviewed && (
-          <div className="absolute top-0 left-0 right-0 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium z-10 backdrop-blur-sm">
-            Previewing version from{" "}
-            {new Date(versionBeingPreviewed.timestamp).toLocaleString()}
+        {/* Main content area */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Preview Banner */}
+          {versionBeingPreviewed && (
+            <div className="absolute top-0 left-0 right-0 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium z-10 backdrop-blur-sm">
+              Previewing version from{" "}
+              {new Date(versionBeingPreviewed.timestamp).toLocaleString()}
+            </div>
+          )}
+
+          {/* AI Action Toolbar - floating left */}
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
+            <AIActionToolbar />
           </div>
-        )}
 
-        {/* AI Action Toolbar - floating left */}
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
-          <AIActionToolbar />
+          {/* Editor - Google Docs style */}
+          <div className="h-full flex flex-col items-center justify-start sm:py-3 sm:px-4 px-0 py-0 overflow-y-auto w-full custom-scrollbar">
+            <div
+              className="w-full sm:max-w-[210mm] min-h-full sm:min-h-[297mm] bg-editor-paper sm:shadow-xl sm:border border-white/5 sm:rounded-sm shrink-0 mx-auto transition-all duration-300"
+              style={{ fontFamily }}
+              aria-busy={isLoading}
+            >
+              {isLoading && (
+                <span className="sr-only">Loading document content...</span>
+              )}
+              <Editor
+                // the key changes forces the editor to remount to c=show the new changes
+                key={`${documentId}:${
+                  versionBeingPreviewed?.id ?? (isHydrated ? "live" : "loading")
+                }`}
+                initialValue={displayContent ?? undefined}
+                editable={!versionBeingPreviewed && isHydrated}
+                isLoading={!isHydrated}
+                documentId={documentId}
+              />
+            </div>
+          </div>
+
+          {/* Document History Card */}
+          <DocHistoryCard documentId={documentId} history={versionsList} />
         </div>
 
-        {/* Editor - Google Docs style */}
-        <div className="h-full flex flex-col items-center justify-start sm:py-3 sm:px-4 px-0 py-0 overflow-y-auto w-full custom-scrollbar">
-          <div
-            className="w-full sm:max-w-[210mm] min-h-full sm:min-h-[297mm] bg-editor-paper sm:shadow-xl sm:border border-white/5 sm:rounded-sm shrink-0 mx-auto transition-all duration-300"
-            style={{ fontFamily }}
-            aria-busy={isLoading}
-          >
-            {isLoading && (
-              <span className="sr-only">Loading document content...</span>
-            )}
-            <Editor
-              // the key changes forces the editor to remount to c=show the new changes
-              key={`${documentId}:${
-                versionBeingPreviewed?.id ?? (isHydrated ? "live" : "loading")
-              }`}
-              initialValue={displayContent ?? undefined}
-              editable={!versionBeingPreviewed && isHydrated}
-              isLoading={!isHydrated}
-              documentId={documentId}
-            />
-          </div>
+        {/* Floating AI Input Bar - fixed at bottom center */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50">
+          <AIInputBar />
         </div>
-
-        {/* Document History Card */}
-        <DocHistoryCard documentId={documentId} history={versionsList} />
       </div>
-
-      {/* Floating AI Input Bar - fixed at bottom center */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50">
-        <AIInputBar />
-      </div>
-    </div>
+    </EditorRoot>
   );
 }
