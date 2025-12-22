@@ -1,6 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
 import { JSONContent } from "novel";
 import { twMerge } from "tailwind-merge";
+import {
+  MAX_FILE_SIZE,
+  SUPPORTED_FILE_TYPES,
+  SUPPORTED_IMAGE_TYPES,
+} from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -115,9 +120,6 @@ export function formatPreviewTimestamp(date: Date | string | number): string {
 // MEDIA UTILITIES (File Upload, Voice Recording, Paste Handling)
 // ============================================================================
 
-/**
- * Attachment type discriminated union for type-safe rendering
- */
 export type Attachment =
   | {
       type: "image";
@@ -152,23 +154,6 @@ export interface VoiceRecordingState {
   isRecording: boolean;
   error: string | null;
 }
-
-// Constants
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const SUPPORTED_IMAGE_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "image/webp",
-];
-const SUPPORTED_FILE_TYPES = [
-  ...SUPPORTED_IMAGE_TYPES,
-  "application/pdf",
-  "text/plain",
-  "text/markdown",
-  "application/json",
-];
 
 /**
  * Process uploaded files into Attachment objects

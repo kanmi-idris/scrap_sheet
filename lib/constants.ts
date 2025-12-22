@@ -78,3 +78,21 @@ export const PRESET_FORMULAS = [
   { label: "Fraction", latex: "\\frac{a}{b}" },
   { label: "Pi", latex: "\\pi" },
 ];
+
+// AI Input Configuration
+export const MAX_ATTACHMENTS = 5;
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const SUPPORTED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/webp",
+];
+export const SUPPORTED_FILE_TYPES = [
+  ...SUPPORTED_IMAGE_TYPES,
+  "application/pdf",
+  "text/plain",
+  "text/markdown",
+  "application/json",
+];
