@@ -27,19 +27,19 @@ const CONSTANT_ACTIONS: AIAction[] = [
     id: "proofread",
     label: "Proofread",
     icon: SearchAreaIcon,
-    command: (editor) => console.log("Proofread triggered"),
+    command: () => {},
   },
   {
     id: "grammar",
     label: "Grammar",
     icon: TextCheckIcon,
-    command: (editor) => console.log("Fix Grammar triggered"),
+    command: () => {},
   },
   {
     id: "paraphrase",
     label: "Paraphrase",
     icon: AiBrain01Icon,
-    command: (editor) => console.log("Paraphrase triggered"),
+    command: () => {},
   },
 ];
 
@@ -49,13 +49,13 @@ const CONTEXTUAL_ACTIONS: AIAction[] = [
     id: "improve",
     label: "Improve",
     icon: MagicWand01Icon,
-    command: (editor) => console.log("Improve Writing triggered"),
+    command: () => {},
   },
   {
     id: "shorten",
     label: "Shorten",
     icon: Edit02Icon,
-    command: (editor) => console.log("Shorten triggered"),
+    command: () => {},
   },
 ];
 

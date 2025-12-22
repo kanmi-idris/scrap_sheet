@@ -59,31 +59,19 @@ export default function EditorPage({
 
   // Reset store when documentId changes + cleanup on unmount
   useEffect(() => {
-    console.log("[PAGE] Reset effect triggered for documentId:", documentId);
     reset();
     return () => {
-      console.log("[PAGE] Cleanup reset for documentId:", documentId);
       reset();
     };
   }, [documentId, reset]);
 
   // Hydrate store when latest version is available (ONLY on initial load)
   useEffect(() => {
-    console.log(
-      "[PAGE] Hydrate effect. fetchingVersions:",
-      fetchingVersions,
-      "latestVersion:",
-      !!latestVersion,
-      "isHydrated:",
-      isHydrated
-    );
     // Only hydrate if NOT already hydrated (prevents loop after saves)
     if (latestVersion && !fetchingVersions && !isHydrated) {
-      console.log("[PAGE] Calling hydrateFromVersion (initial load)...");
       hydrateFromVersion(latestVersion);
 
       // Fire-and-forget; cleanup after hydration completes to not block the editor load
-      console.log("[PAGE] Triggering version cleanup...");
       cleanupOldVersions(documentId, versionsList).catch((error) => {
         console.error("[PAGE] Cleanup failed (non-critical):", error);
       });
@@ -100,12 +88,6 @@ export default function EditorPage({
 
   // Compute display content based on preview mode or hydration state
   const displayContent = useMemo(() => {
-    console.log(
-      "[PAGE] Computing displayContent. isHydrated:",
-      isHydrated,
-      "hasPreview:",
-      !!versionBeingPreviewed
-    );
     if (versionBeingPreviewed) {
       try {
         return typeof versionBeingPreviewed.content === "string"
@@ -116,12 +98,7 @@ export default function EditorPage({
       }
     }
     // Only return content after hydration is complete
-    const result = isHydrated ? content : undefined;
-    console.log(
-      "[PAGE] displayContent result:",
-      result ? "has content" : "undefined"
-    );
-    return result;
+    return isHydrated ? content : undefined;
   }, [versionBeingPreviewed, isHydrated, content]);
 
   if (documentNotFound) {
@@ -201,7 +178,7 @@ export default function EditorPage({
         <DocHistoryCard documentId={documentId} history={versionsList} />
 
         {/* Floating AI Input Bar - fixed at bottom center */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md z-[99999px]">
           <AIInputBar />
         </div>
       </div>

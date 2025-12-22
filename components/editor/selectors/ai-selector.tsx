@@ -13,19 +13,19 @@ export type AISelectorItem = {
 const items: AISelectorItem[] = [
   {
     name: "Improve",
-    command: (editor) => console.log("Improve Writing triggered"),
+    command: () => {},
   },
   {
     name: "Fix Grammar",
-    command: (editor) => console.log("Fix Grammar triggered"),
+    command: () => {},
   },
   {
     name: "Rephrase",
-    command: (editor) => console.log("Rephrase triggered"),
+    command: () => {},
   },
   {
     name: "Shorten",
-    command: (editor) => console.log("Shorten triggered"),
+    command: () => {},
   },
 ];
 

@@ -87,7 +87,6 @@ export default function Editor({
                 .replace(/[\u200b-\u200f\u2060\ufeff]/g, ""); // Zero-width chars
 
               if (sanitized !== text) {
-                console.log("[EDITOR] Sanitized paste content");
                 toast.info("Pasted content was cleaned for safety");
               }
 

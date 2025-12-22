@@ -11,7 +11,6 @@ import {
   AUTOSAVE_INTERVAL_MS,
   DEFAULT_FONT_FAMILY,
   DOC_PREVIEW_LENGTH,
-  MILLISECONDS_IN_DAY,
   TYPING_INACTIVITY_MS,
   VERSION_ROTATION_MS,
   VERSION_VALIDITY_SECONDS,
@@ -103,7 +102,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setEditorInstance: (editor) => set({ editorInstance: editor }),
 
   hydrateFromVersion: (version: Version) => {
-    console.log("[HYDRATE] Starting hydration...");
     try {
       const parsedContent =
         typeof version.content === "string"
@@ -120,13 +118,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         isSaved: true,
         isHydrated: true,
       });
-
-      console.log("[HYDRATE] Complete. State:", {
-        isSaved: get().isSaved,
-        isHydrated: get().isHydrated,
-        isUpdatingDataStore: get().isUpdatingDataStore,
-        title: get().title,
-      });
     } catch (e) {
       console.error("[HYDRATE] Failed to parse version content", e);
       set({
@@ -141,7 +132,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   markUserTyping: () => {
-    console.log("[TYPING] User typing detected");
     set({ isUserCurrentlyTyping: true });
 
     // Clear existing inactivity timeout
@@ -151,21 +141,15 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
     // Set new timeout to mark user as stopped typing after inactivity
     typingInactivityTimeout = setTimeout(() => {
-      console.log("[TYPING] User stopped typing (inactivity timeout)");
       set({ isUserCurrentlyTyping: false });
     }, TYPING_INACTIVITY_MS);
   },
 
   initiateAutosave: (documentId: string) => {
     const { isUpdatingDataStore, lastVersionRotationAt } = get();
-    console.log(
-      "[AUTOSAVE] Initiated. isUpdatingDataStore:",
-      isUpdatingDataStore
-    );
 
     // Guard: Don't start new save if already saving
     if (isUpdatingDataStore) {
-      console.log("[AUTOSAVE] Skipped - already updating");
       return;
     }
 
@@ -185,7 +169,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     get()
       .updateDocumentAndActiveVersion(documentId)
       .then(() => {
-        console.log("[AUTOSAVE] Save complete. Scheduling next check...");
         // After save completes, schedule next save for 500ms in the future
         autosaveTimeout = setTimeout(() => {
           const { isUserCurrentlyTyping, isUpdatingDataStore } = get();
@@ -205,23 +188,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
   updateDocumentAndActiveVersion: async (documentId: string) => {
     const { title, content, versionCurrentlyInUse } = get();
-    console.log("[SAVE] Starting save...", {
-      hasContent: !!content,
-      hasVersion: !!versionCurrentlyInUse,
-    });
 
     if (!content) {
-      console.warn("[SAVE] Aborted - content is null");
       return;
     }
 
     // Guard: Don't start if resetting
     if (isResetting) {
-      console.warn("[SAVE] Aborted - reset in progress");
       return;
     }
 
-    console.log("[SAVE] Setting isUpdatingDataStore=true, isSaved=false");
     set({ isUpdatingDataStore: true, isSaved: false });
 
     try {
@@ -281,9 +257,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
       // Abort if reset was called during transaction
       if (isResetting) {
-        console.warn(
-          "Save state update aborted: reset called during transaction"
-        );
         return;
       }
 
@@ -292,7 +265,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         set({ versionCurrentlyInUse: updatedVersion });
       }
 
-      console.log("[SAVE] Transaction success. Setting isSaved=true");
       set({
         lastSavedAt: Date.now(),
         isSaved: true,
@@ -301,21 +273,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       console.error("[SAVE] Transaction failed:", error);
       set({ isSaved: false });
     } finally {
-      console.log(
-        "[SAVE] Finally block. Setting isUpdatingDataStore=false. Current state:",
-        {
-          isSaved: get().isSaved,
-          isUpdatingDataStore: get().isUpdatingDataStore,
-        }
-      );
       set({ isUpdatingDataStore: false });
     }
   },
 
   autoCreateVersion: (documentId: string) => {
-    console.log(
-      "[VERSION_ROTATION] Scheduling version rotation in 5 minutes..."
-    );
     // Clear any existing rotation timeout (reschedule)
     if (versionRotationTimeout) {
       clearTimeout(versionRotationTimeout);
@@ -329,12 +291,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         versionCurrentlyInUse,
       } = get();
 
-      console.log("[VERSION_ROTATION] Timer fired. Checking conditions:", {
-        isUserCurrentlyTyping,
-        isUpdatingDataStore,
-        hasVersion: !!versionCurrentlyInUse,
-      });
-
       // Only rotate if:
       // 1. User is actively working (has typed recently)
       // 2. Not currently in a save operation
@@ -345,7 +301,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         versionCurrentlyInUse
       ) {
         try {
-          console.log("[VERSION_ROTATION] Creating new version snapshot...");
           await get().createNewWorkingVersion(documentId);
           // Schedule next rotation
           get().autoCreateVersion(documentId);
@@ -354,45 +309,30 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
       } else if (isUserCurrentlyTyping) {
         // User is typing but other conditions not met, reschedule
-        console.log("[VERSION_ROTATION] Conditions not met, rescheduling...");
         get().autoCreateVersion(documentId);
-      } else {
-        console.log("[VERSION_ROTATION] User not typing, cycle stopped");
       }
     }, VERSION_ROTATION_MS);
   },
 
   createNewWorkingVersion: async (documentId: string) => {
     const { title, content, versionCurrentlyInUse } = get();
-    console.log("[NEW_VERSION] Starting...", {
-      hasContent: !!content,
-      hasVersion: !!versionCurrentlyInUse,
-    });
 
     if (!content) {
-      console.warn("[NEW_VERSION] Aborted - content is null");
       return;
     }
 
     // Guard: Don't start if resetting
     if (isResetting) {
-      console.warn("[NEW_VERSION] Aborted - reset in progress");
       return;
     }
 
     // If no current version, this is handled by updateDocumentAndActiveVersion
     if (!versionCurrentlyInUse) {
-      console.log(
-        "[NEW_VERSION] Skipped - no current version (handled by save)"
-      );
       return;
     }
 
     // Validate version belongs to this document
     if (versionCurrentlyInUse.documentId !== documentId) {
-      console.error(
-        `[NEW_VERSION] Failed - version documentId ${versionCurrentlyInUse.documentId} does not match ${documentId}`
-      );
       return;
     }
 
@@ -416,14 +356,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
       // Abort if reset was called during insert
       if (isResetting) {
-        console.warn("[NEW_VERSION] State update aborted - reset called");
         return;
       }
 
-      console.log(
-        "[NEW_VERSION] Created successfully. New version ID:",
-        newVersion.id
-      );
       // Update state to use the new version as the working version
       set({
         versionCurrentlyInUse: newVersion,
@@ -437,10 +372,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   restoreVersion: async (documentId: string, version: Version) => {
-    console.log("[RESTORE] Starting restore from version:", version.id);
     // Guard: Don't start if resetting
     if (isResetting) {
-      console.warn("[RESTORE] Aborted - reset in progress");
       return;
     }
 
@@ -457,7 +390,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         );
       }
 
-      console.log("[RESTORE] Setting local state for instant UI feedback");
       // Update local state immediately for instant UI feedback
       set({
         content: restoredContent as JSONContent,
@@ -497,18 +429,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
       // Abort if reset was called during transaction
       if (isResetting) {
-        console.warn(
-          "[RESTORE] State update aborted - reset called during transaction"
-        );
         return;
       }
 
       // Only update version state after successful transaction
       if (newVersion) {
-        console.log(
-          "[RESTORE] Success. New version ID:",
-          (newVersion as Version).id
-        );
         set({
           versionCurrentlyInUse: newVersion,
           lastSavedAt: Date.now(),
@@ -525,16 +450,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
   cleanupOldVersions: async (documentId: string, allVersions: Version[]) => {
     const { versionCurrentlyInUse } = get();
-    console.log(
-      "[CLEANUP] Starting cleanup for documentId:",
-      documentId,
-      "Total versions:",
-      allVersions.length
-    );
 
     // Guard: Don't run if resetting
     if (isResetting) {
-      console.warn("[CLEANUP] Aborted - reset in progress");
       return;
     }
 
@@ -544,48 +462,23 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       cutoffDate.setSeconds(cutoffDate.getSeconds() - VERSION_VALIDITY_SECONDS);
       const cutoffTimestamp = cutoffDate.getTime();
 
-      console.log("[CLEANUP] Cutoff date:", cutoffDate.toISOString());
-
       // Filter versions to delete: older than cutoff AND not the working version
       const versionsToDelete = allVersions.filter((version) => {
         const versionTimestamp = new Date(version.timestamp).getTime();
         const isOld = versionTimestamp < cutoffTimestamp;
         const isWorkingVersion = versionCurrentlyInUse?.id === version.id;
-        const shouldDelete =
-          isOld && !isWorkingVersion && version.documentId === documentId;
-
-        if (shouldDelete) {
-          console.log("[CLEANUP] Marking for deletion:", {
-            id: version.id,
-            timestamp: new Date(version.timestamp).toISOString(),
-            age:
-              Math.floor(
-                (Date.now() - versionTimestamp) / MILLISECONDS_IN_DAY
-              ) + " days",
-          });
-        }
-
-        return shouldDelete;
+        return isOld && !isWorkingVersion && version.documentId === documentId;
       });
 
       if (versionsToDelete.length === 0) {
-        console.log("[CLEANUP] No old versions to delete");
         return;
       }
-
-      console.log(`[CLEANUP] Deleting ${versionsToDelete.length} old versions`);
 
       await triplit.transact(async (tx) => {
         for (const version of versionsToDelete) {
           await tx.delete("versions", version.id);
         }
       });
-
-      console.log(
-        "[CLEANUP] Successfully deleted",
-        versionsToDelete.length,
-        "versions"
-      );
 
       // Show success toast
       toast.success(
@@ -601,22 +494,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
   // Reset all state
   reset: () => {
-    const { isUpdatingDataStore, isSaved, isHydrated } = get();
-    console.log("[RESET] Called. Current state:", {
-      isUpdatingDataStore,
-      isSaved,
-      isHydrated,
-    });
+    const { isUpdatingDataStore } = get();
 
     // Set abort flag to prevent any pending async operations from updating state
     isResetting = true;
     set({ isResetting: true });
-
-    if (isUpdatingDataStore) {
-      console.warn(
-        "[RESET] Warning: save/restore in progress. Pending operations will be aborted."
-      );
-    }
 
     // Clear all timeouts to prevent memory leaks and stale callbacks
     if (autosaveTimeout) {
@@ -633,10 +515,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     }
 
     // Reset state (keep isResetting true until timeout clears it)
-    console.log(
-      "[RESET] Resetting to initialState. isSaved will be:",
-      initialState.isSaved
-    );
     set({
       ...initialState,
       isResetting: true, // Override initialState.isResetting
@@ -646,10 +524,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     setTimeout(() => {
       isResetting = false;
       set({ isResetting: false });
-      console.log("[RESET] Complete. Final state:", {
-        isSaved: get().isSaved,
-        isHydrated: get().isHydrated,
-      });
     }, 100);
   },
 }));
