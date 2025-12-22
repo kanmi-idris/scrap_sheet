@@ -137,9 +137,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     // If user starts typing while previewing a version, clear the preview
     // to avoid confusion between preview content and live editing
     if (versionBeingPreviewed) {
-      console.log(
-        "[TEST-TYPING] Clearing version preview - user started typing"
-      );
       set({ versionBeingPreviewed: null });
     }
 
@@ -294,11 +291,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       clearTimeout(versionRotationTimeout);
     }
 
-    console.log(
-      `[TEST-ROTATION] Scheduling version rotation in ${
-        VERSION_ROTATION_MS / 1000
-      }s...`
-    );
     // Schedule version rotation for VERSION_ROTATION_MS in the future
     versionRotationTimeout = setTimeout(async () => {
       const {
@@ -306,12 +298,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         isUserCurrentlyTyping,
         versionCurrentlyInUse,
       } = get();
-
-      console.log("[TEST-ROTATION] Timer fired:", {
-        isUserCurrentlyTyping,
-        isUpdatingDataStore,
-        hasVersion: !!versionCurrentlyInUse,
-      });
 
       // Only rotate if:
       // 1. User is actively working (has typed recently)
@@ -321,13 +307,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       // isUpdatingDataStore to prevent concurrent operations.
       if (isUserCurrentlyTyping && versionCurrentlyInUse) {
         try {
-          console.log(
-            "[TEST-ROTATION] Conditions met, creating new version snapshot..."
-          );
           await get().createNewWorkingVersion(documentId);
-          console.log(
-            "[TEST-ROTATION] ✓ Version snapshot created successfully"
-          );
           // Schedule next rotation
           get().autoCreateVersion(documentId);
         } catch (error: unknown) {
@@ -337,10 +317,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         // User is typing but other conditions not met, reschedule
         get().autoCreateVersion(documentId);
       } else {
-        // User stopped typing - clear version rotation state so next typing session can start fresh
-        console.log(
-          "[TEST-ROTATION] User stopped typing - clearing rotation state"
-        );
+        // User stopped typing - clear rotation state so next typing session can start fresh
         set({ lastVersionRotationAt: null });
       }
     }, VERSION_ROTATION_MS);
@@ -348,11 +325,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
   createNewWorkingVersion: async (documentId: string) => {
     const { title, content, versionCurrentlyInUse } = get();
-
-    console.log("[TEST-VERSION] createNewWorkingVersion called:", {
-      hasContent: !!content,
-      hasCurrentVersion: !!versionCurrentlyInUse,
-    });
 
     if (!content) {
       return;
@@ -379,7 +351,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const contentString = JSON.stringify(content);
       const now = new Date();
 
-      console.log("[TEST-VERSION] Inserting new version into DB...");
       // NOTE: The current working version is already in the DB from continuous autosaves.
       // It's already immutable in history. We just create a NEW working version.
       // The old version automatically becomes a checkpoint in the history timeline.
@@ -397,10 +368,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         return;
       }
 
-      console.log(
-        "[TEST-VERSION] ✓ New version inserted successfully. ID:",
-        newVersion.id
-      );
       // Update state to use the new version as the working version
       set({
         versionCurrentlyInUse: newVersion,
@@ -493,11 +460,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   cleanupOldVersions: async (documentId: string, allVersions: Version[]) => {
     const { versionCurrentlyInUse } = get();
 
-    console.log("[TEST-CLEANUP] Starting cleanup check...", {
-      totalVersions: allVersions.length,
-      validitySeconds: VERSION_VALIDITY_SECONDS,
-    });
-
     // Guard: Don't run if resetting
     if (isResetting) {
       return;
@@ -509,32 +471,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       cutoffDate.setSeconds(cutoffDate.getSeconds() - VERSION_VALIDITY_SECONDS);
       const cutoffTimestamp = cutoffDate.getTime();
 
-      console.log("[TEST-CLEANUP] Cutoff date:", cutoffDate.toISOString());
-
       // Filter versions to delete: older than cutoff AND not the working version
       const versionsToDelete = allVersions.filter((version) => {
         const versionTimestamp = new Date(version.timestamp).getTime();
         const isOld = versionTimestamp < cutoffTimestamp;
         const isWorkingVersion = versionCurrentlyInUse?.id === version.id;
-        const age = Math.floor((Date.now() - versionTimestamp) / 1000);
-
-        if (isOld && !isWorkingVersion) {
-          console.log(
-            `[TEST-CLEANUP] Marking for deletion: ${version.id} (${age}s old)`
-          );
-        }
-
         return isOld && !isWorkingVersion && version.documentId === documentId;
       });
 
       if (versionsToDelete.length === 0) {
-        console.log("[TEST-CLEANUP] No old versions to delete");
         return;
       }
-
-      console.log(
-        `[TEST-CLEANUP] Deleting ${versionsToDelete.length} old version(s)...`
-      );
 
       await triplit.transact(async (tx) => {
         for (const version of versionsToDelete) {
@@ -542,9 +489,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
       });
 
-      console.log(
-        `[TEST-CLEANUP] ✓ Successfully deleted ${versionsToDelete.length} version(s)`
-      );
       // Show success toast
       toast.success(
         `Cleaned up ${versionsToDelete.length} old version${
