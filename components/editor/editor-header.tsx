@@ -49,6 +49,7 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
   const setIsHistoryOpen = useEditorStore((s) => s.setIsHistoryOpen);
   const markUserTyping = useEditorStore((s) => s.markUserTyping);
   const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
+  const isAgenticMode = useEditorStore((s) => s.isAgenticMode);
 
   const isPreviewMode = !!versionBeingPreviewed;
 
@@ -64,7 +65,8 @@ export function EditorHeader({ documentId }: EditorHeaderProps) {
       animate={{ y: 0, opacity: 1 }}
       className={cn(
         "flex h-14 items-center justify-between px-2 sm:px-4 sm:m-3 m-0 sm:rounded-2xl rounded-none border-b sm:border border-white/10 bg-surface-night/10 backdrop-blur-xl shadow-lg shadow-black/20 z-50 overflow-hidden sticky top-0 left-0 right-0 sm:static transition-opacity",
-        isPreviewMode && "pointer-events-none opacity-50 select-none"
+        (isPreviewMode || isAgenticMode) &&
+          "pointer-events-none opacity-50 select-none"
       )}
     >
       {/* Left section - Go back + Title */}

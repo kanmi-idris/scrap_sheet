@@ -208,25 +208,40 @@ function Editor({ documentId }: { documentId: string }) {
 }
 ```
 
----
-
 ## API Reference
 
 ### State Properties
 
 ```typescript
 interface EditorState {
+  // Document State
   content: JSONContent | null;
   title: string;
+  wordCount: number;
+  editorInstance: EditorInstance | null;
+  
+  // Version State
   versionCurrentlyInUse: Version | null;
+  versionBeingPreviewed: Version | null;
+  
+  // Autosave State
   isUserCurrentlyTyping: boolean;
   isUpdatingDataStore: boolean;
   isResetting: boolean;
+  isSaved: boolean;
   lastVersionRotationAt: Date | null;
+  
+  // Agentic AI Editing State (see agentic-editing.md)
+  isAgenticMode: boolean;
+  agenticContent: JSONContent | null;
+  pendingEdits: AgenticEdit[];
+  currentEditIndex: number;
+  focusedNodeId: string | null;
+  initialEditCount: number;
 }
 ```
 
-### Actions
+### Core Actions
 
 | Method | Parameters | Description |
 |--------|------------|-------------|
@@ -236,3 +251,21 @@ interface EditorState {
 | `initiateAutosave` | `documentId: string` | Start/continue autosave cycle |
 | `restoreVersion` | `version: Version, documentId: string` | Restore from historical version |
 | `reset` | none | Clean up and reset to initial state |
+
+### Agentic AI Actions
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `applyPendingEdits` | `edits: AgenticEdit[]` | Enter agentic mode with AI suggestions |
+| `acceptEdit` | `nodeId: string` | Accept single AI suggestion |
+| `rejectEdit` | `nodeId: string` | Reject single AI suggestion |
+| `acceptAllEdits` | none | Accept all remaining suggestions |
+| `rejectAllEdits` | none | Reject all and restore original |
+| `navigateEdit` | `direction: "prev" \| "next"` | Navigate between pending edits |
+| `continueWithPartialEdits` | none | Exit with partially accepted edits |
+
+---
+
+## Related Documentation
+
+- **[agentic-editing.md](./agentic-editing.md)** - Complete AI editing system architecture

@@ -1,3 +1,4 @@
+import { Extension } from "@tiptap/core";
 import CharacterCount from "@tiptap/extension-character-count";
 import Focus from "@tiptap/extension-focus";
 import FontFamily from "@tiptap/extension-font-family";
@@ -25,6 +26,11 @@ import {
   TiptapImage,
   TiptapLink,
 } from "novel";
+import { AutoNodeIdPlugin } from "./custom-editor-extensions/auto-node-id-plugin";
+import { DiffFocusPlugin } from "./custom-editor-extensions/diff-focus-plugin";
+import { DiffMark } from "./custom-editor-extensions/diff-mark";
+import { NodeCommands } from "./custom-editor-extensions/node-commands";
+import { NodeIdMark } from "./custom-editor-extensions/node-id-mark";
 
 const starterKit = StarterKit.configure({
   bulletList: {
@@ -169,4 +175,20 @@ export const defaultExtensions = [
     className: "selection",
   }),
   Typography,
+  DiffMark,
+  NodeIdMark,
+  NodeCommands,
+  // Plugin wrappers for AutoNodeIdPlugin and DiffFocusPlugin
+  Extension.create({
+    name: "autoNodeId",
+    addProseMirrorPlugins() {
+      return [AutoNodeIdPlugin];
+    },
+  }),
+  Extension.create({
+    name: "diffFocus",
+    addProseMirrorPlugins() {
+      return [DiffFocusPlugin];
+    },
+  }),
 ];

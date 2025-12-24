@@ -22,6 +22,16 @@ let typingInactivityTimeout: ReturnType<typeof setTimeout> | null = null;
 let versionRotationTimeout: ReturnType<typeof setTimeout> | null = null;
 let isResetting = false; // Flag to prevent state updates during/after reset
 
+/**
+ * Simplified agentic edit - uses node IDs instead of positions.
+ * The client finds nodes by their nodeId mark, eliminating position drift.
+ */
+export interface AgenticEdit {
+  nodeId: string;
+  replaceText: string;
+  explanation: string;
+}
+
 interface EditorState {
   title: string;
   content: JSONContent | null;
@@ -42,6 +52,14 @@ interface EditorState {
   wordCount: number;
   isHistoryOpen: boolean;
   editorInstance: EditorInstance | null;
+
+  // Agentic AI state
+  pendingEdits: AgenticEdit[];
+  currentEditIndex: number;
+  isAgenticMode: boolean;
+  focusedNodeId: string | null;
+  agenticContent: JSONContent | null; // Working copy with AI suggestions
+  initialEditCount: number; // Total edits from AI (for partial accept UI)
 
   // Setters
   setTitle: (title: string) => void;
@@ -69,6 +87,16 @@ interface EditorState {
 
   // Reset
   reset: () => void;
+
+  // Agentic AI actions
+  applyPendingEdits: (edits: AgenticEdit[]) => void;
+  acceptEdit: (nodeId: string) => void;
+  rejectEdit: (nodeId: string) => void;
+  acceptAllEdits: () => void;
+  rejectAllEdits: () => void;
+  navigateEdit: (direction: "prev" | "next") => void;
+  exitAgenticMode: () => void;
+  continueWithPartialEdits: () => void; // Accept edits so far, exit agentic mode
 }
 
 const initialState = {
@@ -87,6 +115,13 @@ const initialState = {
   isUserCurrentlyTyping: false,
   lastVersionRotationAt: null as number | null,
   editorInstance: null as EditorInstance | null,
+  // Agentic AI initial state
+  pendingEdits: [] as AgenticEdit[],
+  currentEditIndex: 0,
+  isAgenticMode: false,
+  focusedNodeId: null as string | null,
+  agenticContent: null as JSONContent | null,
+  initialEditCount: 0,
 };
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -154,10 +189,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   initiateAutosave: (documentId: string) => {
-    const { isUpdatingDataStore, lastVersionRotationAt } = get();
+    const { isUpdatingDataStore, lastVersionRotationAt, isAgenticMode } = get();
 
-    // Guard: Don't start new save if already saving
-    if (isUpdatingDataStore) {
+    // Guard: Don't start new save if already saving or in agentic mode
+    if (isUpdatingDataStore || isAgenticMode) {
       return;
     }
 
@@ -534,5 +569,215 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       isResetting = false;
       set({ isResetting: false });
     }, 100);
+  },
+
+  // ============================================
+  // Agentic AI Actions
+  // ============================================
+
+  applyPendingEdits: (edits: AgenticEdit[]) => {
+    if (edits.length === 0) return;
+
+    const { content } = get();
+    const firstNodeId = edits[0]?.nodeId ?? null;
+
+    set({
+      pendingEdits: edits,
+      currentEditIndex: 0,
+      isAgenticMode: true,
+      focusedNodeId: firstNodeId,
+      agenticContent: content ? JSON.parse(JSON.stringify(content)) : null,
+      initialEditCount: edits.length,
+    });
+  },
+
+  acceptEdit: (nodeId: string) => {
+    const { pendingEdits, currentEditIndex, editorInstance } = get();
+    const editIndex = pendingEdits.findIndex((e) => e.nodeId === nodeId);
+
+    if (editIndex === -1 || !editorInstance) return;
+
+    // Use NodeCommands to accept the edit:
+    // 1. Remove the original node (marked as delete)
+    // 2. Remove diff marks from replacement node
+    editorInstance
+      .chain()
+      .focus()
+      .deleteNodeById(nodeId) // Removes original (deleted) text
+      .removeDiffMarks(nodeId) // Clear diff marks from replacement
+      .run();
+
+    // Remove this edit from pending
+    const newPendingEdits = pendingEdits.filter((e) => e.nodeId !== nodeId);
+    const newIndex = Math.min(
+      currentEditIndex,
+      Math.max(0, newPendingEdits.length - 1)
+    );
+    const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
+
+    set({
+      pendingEdits: newPendingEdits,
+      currentEditIndex: newIndex,
+      isAgenticMode: newPendingEdits.length > 0,
+      focusedNodeId: newFocusedId,
+    });
+  },
+
+  rejectEdit: (nodeId: string) => {
+    const { pendingEdits, currentEditIndex, editorInstance } = get();
+    const editIndex = pendingEdits.findIndex((e) => e.nodeId === nodeId);
+
+    if (editIndex === -1 || !editorInstance) return;
+
+    // Use NodeCommands to reject the edit:
+    // 1. Delete the replacement node
+    // 2. Remove diff marks from original node
+    editorInstance
+      .chain()
+      .focus()
+      .deleteReplacementNode(nodeId) // Removes the replacement (added) text
+      .removeDiffMarks(nodeId) // Clear diff marks from original
+      .run();
+
+    // Remove this edit from pending
+    const newPendingEdits = pendingEdits.filter((e) => e.nodeId !== nodeId);
+    const newIndex = Math.min(
+      currentEditIndex,
+      Math.max(0, newPendingEdits.length - 1)
+    );
+    const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
+
+    set({
+      pendingEdits: newPendingEdits,
+      currentEditIndex: newIndex,
+      isAgenticMode: newPendingEdits.length > 0,
+      focusedNodeId: newFocusedId,
+    });
+  },
+
+  acceptAllEdits: () => {
+    const { editorInstance, pendingEdits } = get();
+    if (!editorInstance) return;
+
+    // Accept = remove original (delete) nodes, keep replacement (add) nodes, strip marks
+    const chain = editorInstance.chain().focus();
+
+    // Delete all original nodes (marked as "delete")
+    for (const edit of pendingEdits) {
+      chain.deleteNodeById(edit.nodeId);
+    }
+    // Remove all diff marks from replacements
+    chain.removeAllDiffMarks().run();
+
+    // Capture the cleaned editor content as the new source of truth
+    const cleanedContent = editorInstance.getJSON();
+
+    set({
+      content: cleanedContent,
+      agenticContent: null,
+      pendingEdits: [],
+      currentEditIndex: 0,
+      isAgenticMode: false,
+      focusedNodeId: null,
+      initialEditCount: 0,
+    });
+  },
+
+  rejectAllEdits: () => {
+    const { editorInstance, agenticContent } = get();
+    if (!editorInstance) return;
+
+    // agenticContent holds the ORIGINAL content saved before AI edits were applied
+    // content may have been updated by onUpdate handler during editing
+    if (agenticContent) {
+      editorInstance.commands.setContent(agenticContent);
+    }
+
+    set({
+      // Restore content state to the original
+      content: agenticContent,
+      agenticContent: null,
+      pendingEdits: [],
+      currentEditIndex: 0,
+      isAgenticMode: false,
+      focusedNodeId: null,
+      initialEditCount: 0,
+    });
+  },
+
+  navigateEdit: (direction: "prev" | "next") => {
+    const { pendingEdits, currentEditIndex, editorInstance } = get();
+
+    if (pendingEdits.length === 0) return;
+
+    let newIndex: number;
+    if (direction === "next") {
+      newIndex = (currentEditIndex + 1) % pendingEdits.length;
+    } else {
+      newIndex =
+        currentEditIndex === 0 ? pendingEdits.length - 1 : currentEditIndex - 1;
+    }
+
+    const edit = pendingEdits[newIndex];
+
+    set({
+      currentEditIndex: newIndex,
+      focusedNodeId: edit?.nodeId ?? null,
+    });
+
+    // Use NodeCommands to scroll to the focused edit
+    // Dispatch focusedNodeId via transaction meta for DiffFocusPlugin decorations
+    if (editorInstance && edit) {
+      editorInstance.view.dispatch(
+        editorInstance.state.tr.setMeta("focusedNodeId", edit.nodeId)
+      );
+      editorInstance.commands.scrollToNode(edit.nodeId);
+    }
+  },
+
+  exitAgenticMode: () => {
+    // Reject all remaining edits and exit
+    get().rejectAllEdits();
+
+    set({
+      pendingEdits: [],
+      currentEditIndex: 0,
+      isAgenticMode: false,
+      focusedNodeId: null,
+      agenticContent: null,
+      initialEditCount: 0,
+    });
+  },
+
+  continueWithPartialEdits: () => {
+    const { pendingEdits, initialEditCount, editorInstance, agenticContent } =
+      get();
+    if (!editorInstance) return;
+
+    const acceptedCount = initialEditCount - pendingEdits.length;
+
+    // Remove all remaining pending edits (reject them visually)
+    const chain = editorInstance.chain().focus();
+    for (const edit of pendingEdits) {
+      chain.deleteReplacementNode(edit.nodeId);
+    }
+    chain.removeAllDiffMarks().run();
+
+    // The remaining content (with accepted changes) becomes the new content
+    set({
+      content: agenticContent, // Preserve the accepted changes
+      pendingEdits: [],
+      currentEditIndex: 0,
+      isAgenticMode: false,
+      focusedNodeId: null,
+      agenticContent: null,
+      initialEditCount: 0,
+    });
+
+    if (acceptedCount > 0) {
+      toast.success(
+        `Applied ${acceptedCount} suggestion${acceptedCount > 1 ? "s" : ""}`
+      );
+    }
   },
 }));

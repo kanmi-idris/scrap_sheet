@@ -1,9 +1,11 @@
 "use client";
 
+import { AgenticDiffToolbar } from "@/components/editor/agentic-diff-toolbar";
 import { AIActionToolbar } from "@/components/editor/ai-action-toolbar";
 import { AIInputBar } from "@/components/editor/ai-input-bar";
 import { DocHistoryCard } from "@/components/editor/doc-history-card";
 import Editor from "@/components/editor/editor";
+import { EditorBanner } from "@/components/editor/editor-banner";
 import { EditorHeader } from "@/components/editor/editor-header";
 import {
   AlertDialog,
@@ -15,8 +17,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useEditorStore } from "@/lib/store/editor-store";
-import { formatPreviewTimestamp } from "@/lib/utils";
+import { cn, formatPreviewTimestamp } from "@/lib/utils";
 import { triplit } from "@/triplit/client";
+import { AiBrain01Icon } from "@hugeicons/core-free-icons";
 import { useQuery } from "@triplit/react";
 import Link from "next/link";
 import { EditorRoot } from "novel";
@@ -33,6 +36,8 @@ export default function EditorPage({
   const fontFamily = useEditorStore((s) => s.fontFamily);
   const versionBeingPreviewed = useEditorStore((s) => s.versionBeingPreviewed);
   const isHydrated = useEditorStore((s) => s.isHydrated);
+  const isAgenticMode = useEditorStore((s) => s.isAgenticMode);
+  const agenticContent = useEditorStore((s) => s.agenticContent);
 
   const hydrateFromVersion = useEditorStore((s) => s.hydrateFromVersion);
   const cleanupOldVersions = useEditorStore((s) => s.cleanupOldVersions);
@@ -87,7 +92,7 @@ export default function EditorPage({
     versionsList,
   ]);
 
-  // Compute display content based on preview mode or hydration state
+  // Compute display content based on preview mode, agentic mode, or hydration state
   const displayContent = useMemo(() => {
     if (versionBeingPreviewed) {
       try {
@@ -98,9 +103,19 @@ export default function EditorPage({
         return { type: "doc", content: [] };
       }
     }
+    // In agentic mode, show the working copy with AI suggestions
+    if (isAgenticMode && agenticContent) {
+      return agenticContent;
+    }
     // Only return content after hydration is complete
     return isHydrated ? content : undefined;
-  }, [versionBeingPreviewed, isHydrated, content]);
+  }, [
+    versionBeingPreviewed,
+    isAgenticMode,
+    agenticContent,
+    isHydrated,
+    content,
+  ]);
 
   if (documentNotFound) {
     return (
@@ -130,7 +145,12 @@ export default function EditorPage({
 
   return (
     <EditorRoot>
-      <div className="h-full flex flex-col relative scrollbar-hide">
+      <div
+        className={cn(
+          "h-full flex flex-col relative scrollbar-hide",
+          isAgenticMode && "agentic-mode"
+        )}
+      >
         {/* Fixed Header - stays at top during scroll */}
         <div className="sticky top-0 z-30">
           <EditorHeader documentId={documentId} />
@@ -138,10 +158,18 @@ export default function EditorPage({
 
         {/* Preview Banner - fixed below header */}
         {versionBeingPreviewed && (
-          <div className="sticky top-(--header-height,64px) z-20 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 px-4 py-2 text-center text-sm font-medium backdrop-blur-sm">
+          <EditorBanner variant="warning">
             Previewing version from{" "}
             {formatPreviewTimestamp(versionBeingPreviewed.timestamp)}
-          </div>
+          </EditorBanner>
+        )}
+
+        {/* Agentic Mode Banner - fixed below header */}
+        {isAgenticMode && (
+          <EditorBanner variant="info" icon={AiBrain01Icon}>
+            AI is suggesting changes. Review and accept or reject each
+            suggestion.
+          </EditorBanner>
         )}
 
         {/* AI Action Toolbar - fixed to viewport, always visible */}
@@ -167,7 +195,9 @@ export default function EditorPage({
                   versionBeingPreviewed?.id ?? (isHydrated ? "live" : "loading")
                 }`}
                 initialValue={displayContent ?? undefined}
-                editable={!versionBeingPreviewed && isHydrated}
+                editable={
+                  !versionBeingPreviewed && !isAgenticMode && isHydrated
+                }
                 isLoading={!isHydrated}
                 documentId={documentId}
               />
@@ -177,6 +207,11 @@ export default function EditorPage({
 
         {/* Document History Card */}
         <DocHistoryCard documentId={documentId} history={versionsList} />
+
+        {/* Agentic Diff Toolbar - shows when AI edits are pending */}
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
+          <AgenticDiffToolbar />
+        </div>
 
         {/* Floating AI Input Bar - fixed at bottom center */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md z-[99999px]">

@@ -4,12 +4,18 @@ import { DocumentGrid } from "@/components/dashboard/document-grid";
 import AppFooter from "@/components/landing/footer";
 import { AppNavbar } from "@/components/landing/navbar";
 import { triplit } from "@/triplit/client";
+import { seedDemoDocument } from "@/triplit/seed-db";
 import { useQuery } from "@triplit/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
+
+  // MOCK DATA: Seed demo document on first mount (for development testing)
+  useEffect(() => {
+    seedDemoDocument().catch(console.error);
+  }, []);
 
   const query = useMemo(() => {
     // Build query with optional search filter

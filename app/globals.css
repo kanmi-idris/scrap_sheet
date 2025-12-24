@@ -157,9 +157,8 @@
   body {
     @apply bg-background text-foreground;
   }
-  
-  /* Global scrollbar hiding */
 
+  /* Global scrollbar hiding */
 }
 
 @layer utilities {
@@ -366,4 +365,66 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
     display: none;
     pointer-events: none;
   }
+}
+
+/* ============================================
+   AI Diff Mark Styles (Code Editor Style)
+   Scoped to .agentic-mode to only show during AI editing
+   ============================================ */
+
+/* Added text - solid green background like code editor */
+.agentic-mode .ProseMirror span[data-diff-mark][data-diff-type="add"] {
+  background-color: rgba(46, 160, 67, 0.4);
+  color: #7ee787;
+  border-radius: 4px;
+  padding-inline: 4px;
+  margin-inline: 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.15s ease;
+}
+
+.agentic-mode .ProseMirror span[data-diff-mark][data-diff-type="add"]:hover {
+  background-color: rgba(46, 160, 67, 0.6);
+}
+
+/* Deleted text - solid red background with strikethrough */
+.agentic-mode .ProseMirror span[data-diff-mark][data-diff-type="delete"] {
+  background-color: rgba(248, 81, 73, 0.4);
+  color: #ffa198;
+  text-decoration: line-through;
+  text-decoration-color: rgba(248, 81, 73, 0.9);
+  text-decoration-thickness: 2px;
+  border-radius: 3px;
+  padding-inline: 2px;
+  margin-inline: 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.15s ease;
+}
+
+.agentic-mode .ProseMirror span[data-diff-mark][data-diff-type="delete"]:hover {
+  background-color: rgba(248, 81, 73, 0.55);
+}
+
+/* Currently focused diff - outline color matches diff type */
+.agentic-mode .ProseMirror .diff-focused-add {
+  outline: 2px solid rgba(46, 160, 67, 0.8) !important;
+  outline-offset: 1px !important;
+  border-radius: 4px !important;
+}
+
+.agentic-mode .ProseMirror .diff-focused-delete {
+  outline: 2px solid rgba(248, 81, 73, 0.8) !important;
+  outline-offset: 1px !important;
+  border-radius: 3px !important;
+}
+
+/* Heading-specific diff styles - prevent top/bottom clipping */
+.agentic-mode .ProseMirror h1 span[data-diff-mark],
+.agentic-mode .ProseMirror h2 span[data-diff-mark],
+.agentic-mode .ProseMirror h3 span[data-diff-mark] {
+  padding-block: 4px !important;
+  display: inline-block !important;
+  line-height: inherit !important;
 }

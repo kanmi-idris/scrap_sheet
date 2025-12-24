@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { applyAIEditsToEditor } from "@/lib/ai/agentic-editor-utils";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -28,19 +29,19 @@ const CONSTANT_ACTIONS: AIAction[] = [
     id: "proofread",
     label: "Proofread",
     icon: SearchAreaIcon,
-    command: () => {},
+    command: (editor) => applyAIEditsToEditor(editor, "proofread"),
   },
   {
     id: "grammar",
     label: "Grammar",
     icon: TextCheckIcon,
-    command: () => {},
+    command: (editor) => applyAIEditsToEditor(editor, "grammar"),
   },
   {
     id: "paraphrase",
     label: "Paraphrase",
     icon: AiBrain01Icon,
-    command: () => {},
+    command: (editor) => applyAIEditsToEditor(editor, "paraphrase"),
   },
 ];
 
@@ -50,31 +51,32 @@ const CONTEXTUAL_ACTIONS: AIAction[] = [
     id: "improve",
     label: "Improve",
     icon: MagicWand01Icon,
-    command: () => {},
+    command: (editor) => applyAIEditsToEditor(editor, "improve"),
   },
   {
     id: "shorten",
     label: "Shorten",
     icon: Edit02Icon,
-    command: () => {},
+    command: (editor) => applyAIEditsToEditor(editor, "shorten"),
   },
 ];
 
 export function AIActionToolbar() {
   const editor = useEditorStore((s) => s.editorInstance);
   const versionBeingPreviewed = useEditorStore((s) => s.versionBeingPreviewed);
+  const isAgenticMode = useEditorStore((s) => s.isAgenticMode);
   const [hasSelection, setHasSelection] = useState(false);
 
-  const isPreviewMode = !!versionBeingPreviewed;
+  const isDisabled = !!versionBeingPreviewed || isAgenticMode;
 
   useEffect(() => {
     if (!editor) return;
 
+    // if a user highlights a text
     const checkSelection = () => {
       setHasSelection(!editor.state.selection.empty);
     };
 
-    // Initial check
     checkSelection();
 
     editor.on("selectionUpdate", checkSelection);
@@ -93,7 +95,7 @@ export function AIActionToolbar() {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
       className={cn(
         "flex flex-col gap-1 p-1.5 rounded-2xl bg-surface-night/10 backdrop-blur-xl border border-white/5 shadow-xl shadow-black/20 min-w-32 transition-opacity",
-        isPreviewMode && "pointer-events-none opacity-50 select-none"
+        isDisabled && "pointer-events-none opacity-50 select-none"
       )}
     >
       <div className="px-2 py-1.5 mb-1 border-b border-white/5">

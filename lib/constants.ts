@@ -96,3 +96,6 @@ export const SUPPORTED_FILE_TYPES = [
   "text/markdown",
   "application/json",
 ];
+
+// Seed/Demo Document
+export const SEED_DOCUMENT_ID = "seed-demo-document";
