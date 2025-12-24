@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scrap Sheet
+
+A modern, local-first writing assistant with AI-powered editing capabilities. Built with Next.js, Tiptap/Novel editor, and Triplit for offline-first data persistence.
+
+## Features
+
+### Core Editor
+- **Rich Text Editing** — Powered by Tiptap/Novel with full formatting support
+- **Local-First Storage** — Uses Triplit with IndexedDB for offline-capable document storage
+- **Version History** — Automatic versioning with ability to browse and restore previous versions
+- **Auto-Save** — Debounced autosave with visual feedback
+
+### Agentic AI Editing
+- **Diff-Based Suggestions** — AI-suggested edits displayed as inline diffs (green for additions, red strikethrough for deletions)
+- **Accept/Reject Workflow** — Review each suggestion individually with Accept (✓) or Reject (✕) buttons
+- **Batch Operations** — Accept All or Reject All for quick processing
+- **Navigation** — Arrow controls to jump between pending edits with visual focus highlighting
+- **Code-Editor Styling** — VS Code-inspired diff coloring for clear visual distinction
+
+### AI Tools
+- **Proofread** — Spelling and grammar corrections
+- **Grammar** — Grammar-focused improvements
+- **Paraphrase** — Alternative phrasing suggestions
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Editor**: Tiptap via Novel.sh
+- **Database**: Triplit (local-first, IndexedDB)
+- **State Management**: Zustand
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn UI
+- **Icons**: Hugeicons
+- **Animations**: Framer Motion
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Run development server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to access the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+├── app/                    # Next.js App Router pages
+│   ├── dashboard/          # Document list view
+│   └── editor/[id]/        # Individual document editor
+├── components/
+│   ├── editor/             # Editor components
+│   │   ├── extensions/     # Custom Tiptap extensions (DiffMark)
+│   │   ├── agentic-diff-toolbar.tsx
+│   │   ├── ai-action-toolbar.tsx
+│   │   └── ai-input-bar.tsx
+│   └── ui/                 # Shadcn UI components
+├── lib/
+│   ├── ai/                 # AI editing utilities
+│   │   ├── agentic-editor-utils.ts
+│   │   └── mock-ai-edits.ts
+│   ├── hooks/              # Custom React hooks
+│   └── store/              # Zustand stores
+└── triplit/                # Database schema and client
+```
 
-## Learn More
+## Development
 
-To learn more about Next.js, take a look at the following resources:
+### Seeding Demo Data
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The dashboard automatically seeds a demo document on first load for testing the AI editing features.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Testing AI Editing
 
-## Deploy on Vercel
+1. Open the demo document from the dashboard
+2. Click "Proofread" in the AI Action Toolbar
+3. Review the diff highlights (red = original, green = suggestion)
+4. Use Accept/Reject to process individual edits
+5. Use navigation arrows to jump between edits
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```mermaid
+graph TD
+    A[AI Action Toolbar] -->|Click Proofread| B[applyAIEditsToEditor]
+    B -->|Apply DiffMark| C[Editor]
+    B -->|Update State| D[Editor Store]
+    D -->|focusedEditId| E[useDiffFocus Hook]
+    E -->|data-diff-focused| C
+    D -->|isAgenticMode| F[AgenticDiffToolbar]
+    F -->|Accept/Reject| D
+```
+
+## License
+
+MIT
