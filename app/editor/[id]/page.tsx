@@ -199,7 +199,6 @@ export default function EditorPage({
                 editable={
                   !versionBeingPreviewed && !isAgenticMode && isHydrated
                 }
-                isLoading={!isHydrated}
                 documentId={documentId}
               />
             </div>

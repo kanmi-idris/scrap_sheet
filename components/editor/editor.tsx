@@ -16,14 +16,12 @@ import { defaultExtensions } from "./extensions";
 interface EditorProps {
   initialValue?: JSONContent;
   editable?: boolean;
-  isLoading?: boolean;
   documentId: string;
 }
 
 export default function Editor({
   initialValue,
   editable = true,
-  isLoading = false,
   documentId,
 }: EditorProps) {
   const setContent = useEditorStore((s) => s.setContent);

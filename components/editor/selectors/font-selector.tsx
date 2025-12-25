@@ -13,6 +13,8 @@ import { useEditorStore } from "@/lib/store/editor-store";
 export function FontSelector() {
   const fontFamily = useEditorStore((s) => s.fontFamily);
   const setFontFamily = useEditorStore((s) => s.setFontFamily);
+  const initiateAutosave = useEditorStore((s) => s.initiateAutosave);
+  const versionCurrentlyInUse = useEditorStore((s) => s.versionCurrentlyInUse);
 
   const currentFontName =
     FONTS.find((f) => f.value === fontFamily)?.name || "Select Font";
@@ -20,6 +22,7 @@ export function FontSelector() {
   const handleFontChange = (newValue: string | null) => {
     if (newValue) {
       setFontFamily(newValue);
+      initiateAutosave(versionCurrentlyInUse?.documentId || "");
     }
   };
 

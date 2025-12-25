@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
+import "@/lib/assets/globals.css";
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
-import "./globals.css";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
