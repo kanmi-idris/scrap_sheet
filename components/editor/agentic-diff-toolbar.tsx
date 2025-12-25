@@ -44,49 +44,52 @@ export function AgenticDiffToolbar() {
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "flex items-center gap-1 p-1.5 rounded-2xl",
+            "flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl",
             "bg-surface-night/95 backdrop-blur-xl",
             "border border-white/10",
-            "shadow-2xl shadow-black/40"
+            "shadow-2xl shadow-black/40",
+            "max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-hide"
           )}
         >
           {/* Batch Actions */}
-          <div className="flex items-center gap-1 pr-2 border-r border-white/10">
+          <div className="flex items-center gap-0.5 sm:gap-1 pr-1 sm:pr-2 border-r border-white/10 shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={rejectAllEdits}
-              className="h-8 px-3 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg sm:rounded-xl"
             >
-              Reject all
+              <span className="hidden sm:inline">Reject all</span>
+              <span className="sm:hidden">Reject</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={acceptAllEdits}
-              className="h-8 px-3 text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg sm:rounded-xl"
             >
-              Accept all
+              <span className="hidden sm:inline">Accept all</span>
+              <span className="sm:hidden">Accept</span>
             </Button>
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-2 px-2 border-r border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 border-r border-white/10 shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateEdit("prev")}
               disabled={pendingEdits.length <= 1}
-              className="size-7 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30"
+              className="size-6 sm:size-7 rounded-md sm:rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30"
             >
               <HugeiconsIcon
                 icon={ArrowLeft01Icon}
-                className="size-4"
+                className="size-3.5 sm:size-4"
                 strokeWidth={2}
               />
             </Button>
 
-            <span className="text-xs font-medium text-muted-foreground min-w-16 text-center tabular-nums">
+            <span className="text-[10px] sm:text-xs font-medium text-muted-foreground min-w-10 sm:min-w-16 text-center tabular-nums">
               {currentEditIndex + 1} / {pendingEdits.length}
             </span>
 
@@ -95,64 +98,66 @@ export function AgenticDiffToolbar() {
               size="icon"
               onClick={() => navigateEdit("next")}
               disabled={pendingEdits.length <= 1}
-              className="size-7 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30"
+              className="size-6 sm:size-7 rounded-md sm:rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30"
             >
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
-                className="size-4"
+                className="size-3.5 sm:size-4"
                 strokeWidth={2}
               />
             </Button>
           </div>
 
           {/* Current Edit Actions */}
-          <div className="flex items-center gap-1 px-2 border-r border-white/10">
+          <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 border-r border-white/10 shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => currentEdit && rejectEdit(currentEdit.nodeId)}
               disabled={!currentEdit}
-              className="h-8 px-3 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl gap-1.5"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg sm:rounded-xl gap-1"
             >
               <HugeiconsIcon
                 icon={Cancel01Icon}
-                className="size-3.5"
+                className="size-3 sm:size-3.5"
                 strokeWidth={2}
               />
-              Reject
+              <span className="hidden xs:inline md:inline-block">Reject</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => currentEdit && acceptEdit(currentEdit.nodeId)}
               disabled={!currentEdit}
-              className="h-8 px-3 text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl gap-1.5"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg sm:rounded-xl gap-1"
             >
               <HugeiconsIcon
                 icon={Tick01Icon}
-                className="size-3.5"
+                className="size-3 sm:size-3.5"
                 strokeWidth={2}
               />
-              Accept
+              <span className="hidden xs:inline md:inline-block">Accept</span>
             </Button>
           </div>
 
           {/* Partial Accept Button - shows when some edits accepted */}
           {hasPartialAccepts && (
-            <div className="px-2 border-r border-white/10">
+            <div className="px-1 sm:px-2 border-r border-white/10 shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={continueWithPartialEdits}
-                className="h-8 px-3 text-xs font-medium text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-xl gap-1.5"
+                className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs font-medium text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg sm:rounded-xl gap-1"
               >
                 <HugeiconsIcon
                   icon={Tick02Icon}
-                  className="size-3.5"
+                  className="size-3 sm:size-3.5"
                   strokeWidth={2}
                 />
-                Continue with {acceptedCount} change
-                {acceptedCount > 1 ? "s" : ""}
+                <span className="hidden sm:inline">
+                  Continue with {acceptedCount}
+                </span>
+                <span className="sm:hidden">+{acceptedCount}</span>
               </Button>
             </div>
           )}
@@ -162,11 +167,11 @@ export function AgenticDiffToolbar() {
             variant="ghost"
             size="icon"
             onClick={exitAgenticMode}
-            className="size-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5"
+            className="size-6 sm:size-7 rounded-md sm:rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 shrink-0"
           >
             <HugeiconsIcon
               icon={MultiplicationSignIcon}
-              className="size-4"
+              className="size-3.5 sm:size-4"
               strokeWidth={2}
             />
           </Button>

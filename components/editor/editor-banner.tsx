@@ -36,16 +36,20 @@ export function EditorBanner({
     <div
       className={cn(
         "sticky top-(--header-height,64px) z-20",
-        "border-b px-4 py-2 text-center text-sm font-medium backdrop-blur-sm",
+        "border-b px-3 sm:px-4 py-1.5 sm:py-2 text-center text-xs sm:text-sm font-medium backdrop-blur-sm",
         variantStyles[variant],
         className
       )}
     >
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
         {icon && (
-          <HugeiconsIcon icon={icon} className="size-4" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={icon}
+            className="size-3.5 sm:size-4 shrink-0"
+            strokeWidth={2}
+          />
         )}
-        <span>{children}</span>
+        <span className="line-clamp-2 sm:line-clamp-1">{children}</span>
       </div>
     </div>
   );
