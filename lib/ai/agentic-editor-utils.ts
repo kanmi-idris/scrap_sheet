@@ -1,5 +1,6 @@
 "use client";
 
+import { SEED_DOCUMENT_ID } from "@/lib/constants";
 import { useEditorStore } from "@/lib/store/editor-store";
 import { EditorInstance } from "novel";
 import { toast } from "sonner";
@@ -13,18 +14,28 @@ import { ToolType, getAllEdits, getEditsForTool } from "./mock-ai-edits";
  * 1. Each text node already has a nodeId mark from AutoNodeIdPlugin
  * 2. We use NodeCommands to add diff marks and insert replacement text
  *
- * If a nodeId doesn't exist, addDiffMarkAndInsertAfter returns false (graceful failure).
+ *  If a nodeId doesn't exist, addDiffMarkAndInsertAfter returns false (graceful failure).
+ * Note: Currently uses mock edits that only work with the seeded demo document.
  */
 export function applyAIEditsToEditor(
   editor: EditorInstance,
   toolType: ToolType
 ): void {
   // Guard: Prevent re-applying edits if already in agentic mode
-  const { isAgenticMode, pendingEdits } = useEditorStore.getState();
+  const { isAgenticMode, pendingEdits, versionCurrentlyInUse } =
+    useEditorStore.getState();
+
   if (isAgenticMode && pendingEdits.length > 0) {
     console.log(
       "[AGENTIC] Already in agentic mode, ignoring duplicate trigger"
     );
+    return;
+  }
+
+  // Guard: Mock edits only work with the demo document
+  const currentDocumentId = versionCurrentlyInUse?.documentId;
+  if (currentDocumentId !== SEED_DOCUMENT_ID) {
+    toast.info("AI editing coming soon! Try the demo document for a preview.");
     return;
   }
 
