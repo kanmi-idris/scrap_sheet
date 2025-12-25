@@ -34,6 +34,14 @@ export default function Editor({
 
   const debouncedUpdates = useDebouncedCallback(
     ({ editor }: { editor: EditorInstance }) => {
+      // Guard: Don't update store content during agentic mode
+      // The editor key includes isAgenticMode, so this shouldn't fire during agentic mode anyway
+      // redundancy for extra safety
+      const isAgenticMode = useEditorStore.getState().isAgenticMode;
+      if (isAgenticMode) {
+        return;
+      }
+
       const json = editor.getJSON();
       setContent(json);
       setWordCount(calculateWordCount(json));
@@ -53,6 +61,10 @@ export default function Editor({
       onUpdate={debouncedUpdates}
       onCreate={({ editor }) => {
         setEditorInstance(editor);
+
+        // Apply diff marks if entering agentic mode
+        // This happens after remount due to agentic mode as key prop, so the original editor is never polluted
+        useEditorStore.getState().applyDiffsToNewEditor();
 
         // error handler for paste operations
         const originalHandlePaste = editor.view.props.handlePaste;

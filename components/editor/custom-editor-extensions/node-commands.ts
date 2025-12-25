@@ -8,11 +8,15 @@ import type { Node } from "@tiptap/pm/model";
  *
  * Encapsulates position calculation logic, providing clean API
  * for editing nodes by their ID instead of positions.
+ *
+ * Batch operations use Set<string> for O(1) lookups, reducing
+ * doc traversals from O(k×n) to O(n) for k operations.
  */
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     nodeCommands: {
+      // Single-node operations (O(n) each)
       updateNodeById: (nodeId: string, newText: string) => ReturnType;
       deleteNodeById: (nodeId: string) => ReturnType;
       addDiffMark: (nodeId: string, diffType: "add" | "delete") => ReturnType;
@@ -25,6 +29,15 @@ declare module "@tiptap/core" {
       ) => ReturnType;
       deleteReplacementNode: (originalNodeId: string) => ReturnType;
       scrollToNode: (nodeId: string) => ReturnType;
+
+      // Batch operations (O(n) total for k items)
+      deleteNodesByIds: (nodeIds: Set<string>) => ReturnType;
+      deleteReplacementNodesByIds: (nodeIds: Set<string>) => ReturnType;
+      addDiffMarkAndInsertAfter: (
+        nodeId: string,
+        text: string,
+        diffType: "add" | "delete"
+      ) => ReturnType;
     };
   }
 }
@@ -269,14 +282,127 @@ export const NodeCommands = Extension.create({
           });
 
           if (targetPos !== -1 && view) {
-            const domNode = view.domAtPos(targetPos).node;
-            if (domNode && domNode instanceof Element) {
-              domNode.scrollIntoView({ behavior: "smooth", block: "center" });
+            // Walk up the DOM tree to find the parent element
+            // domAtPos may return a text node, which can't be scrolled
+            let element: globalThis.Node | null = view.domAtPos(targetPos).node;
+            while (element && !(element instanceof Element)) {
+              element = element.parentNode;
+            }
+            if (element instanceof Element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
               return true;
             }
           }
 
           return false;
+        },
+
+      // ============================================
+      // Batch Operations - O(n) total for k items
+      // ============================================
+
+      /**
+       * Delete multiple nodes by their IDs in a single traversal.
+       * O(n) instead of O(k×n) for k deletions.
+       */
+      deleteNodesByIds:
+        (nodeIds: Set<string>) =>
+        ({ tr, state, dispatch }) => {
+          const toDelete: Array<{ from: number; to: number }> = [];
+
+          state.doc.descendants((node: Node, pos: number) => {
+            const idMark = node.marks.find(
+              (m: any) => m.type.name === "nodeId"
+            );
+            if (idMark && nodeIds.has(idMark.attrs.id)) {
+              toDelete.push({ from: pos, to: pos + node.nodeSize });
+            }
+            return true;
+          });
+
+          // Delete in reverse order to preserve positions
+          toDelete.sort((a, b) => b.from - a.from);
+          for (const { from, to } of toDelete) {
+            tr.delete(from, to);
+          }
+
+          if (dispatch && toDelete.length > 0) dispatch(tr);
+          return toDelete.length > 0;
+        },
+
+      /**
+       * Delete replacement nodes (type="add") for multiple original nodeIds.
+       * Used for batch reject operations. O(n) instead of O(k×n).
+       */
+      deleteReplacementNodesByIds:
+        (nodeIds: Set<string>) =>
+        ({ tr, state, dispatch }) => {
+          const toDelete: Array<{ from: number; to: number }> = [];
+
+          state.doc.descendants((node: Node, pos: number) => {
+            const diffMark = node.marks.find(
+              (m: any) =>
+                m.type.name === "diffMark" &&
+                m.attrs.type === "add" &&
+                nodeIds.has(m.attrs.nodeId)
+            );
+            if (diffMark) {
+              toDelete.push({ from: pos, to: pos + node.nodeSize });
+            }
+            return true;
+          });
+
+          // Delete in reverse order to preserve positions
+          toDelete.sort((a, b) => b.from - a.from);
+          for (const { from, to } of toDelete) {
+            tr.delete(from, to);
+          }
+
+          if (dispatch && toDelete.length > 0) dispatch(tr);
+          return toDelete.length > 0;
+        },
+
+      /**
+       * Combined operation: add diff mark to node AND insert text after it.
+       * Single traversal instead of two. O(n) instead of O(2n).
+       */
+      addDiffMarkAndInsertAfter:
+        (nodeId: string, text: string, diffType: "add" | "delete") =>
+        ({ tr, state, dispatch }) => {
+          let found = false;
+
+          state.doc.descendants((node: Node, pos: number) => {
+            if (found) return false;
+
+            const idMark = node.marks.find(
+              (m: any) => m.type.name === "nodeId"
+            );
+
+            if (idMark?.attrs.id === nodeId && node.isText) {
+              // Add diff mark to original node
+              const deleteMark = state.schema.marks.diffMark.create({
+                type: "delete",
+                nodeId: nodeId,
+              });
+              tr.addMark(pos, pos + node.nodeSize, deleteMark);
+
+              // Insert replacement text after with "add" mark
+              const addMark = state.schema.marks.diffMark.create({
+                type: diffType,
+                nodeId: nodeId,
+              });
+              const newNode = state.schema.text(text, [addMark]);
+              tr.insert(pos + node.nodeSize, newNode);
+
+              found = true;
+              return false;
+            }
+
+            return true;
+          });
+
+          if (dispatch && found) dispatch(tr);
+          return found;
         },
     };
   },

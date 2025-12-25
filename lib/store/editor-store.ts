@@ -90,6 +90,7 @@ interface EditorState {
 
   // Agentic AI actions
   applyPendingEdits: (edits: AgenticEdit[]) => void;
+  applyDiffsToNewEditor: () => void; // Called from editor onCreate after remount
   acceptEdit: (nodeId: string) => void;
   rejectEdit: (nodeId: string) => void;
   acceptAllEdits: () => void;
@@ -578,21 +579,45 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   applyPendingEdits: (edits: AgenticEdit[]) => {
     if (edits.length === 0) return;
 
-    const { content } = get();
     const firstNodeId = edits[0]?.nodeId ?? null;
 
+    // Just store the edits and set mode
+    // Diffs will be applied by applyDiffsToNewEditor after editor remounts
     set({
       pendingEdits: edits,
       currentEditIndex: 0,
       isAgenticMode: true,
       focusedNodeId: firstNodeId,
-      agenticContent: content ? JSON.parse(JSON.stringify(content)) : null,
+      agenticContent: null, // Not used anymore - editor displays diffs directly
       initialEditCount: edits.length,
     });
   },
 
+  // Called from editor onCreate after remount by the agentic content key to apply diff marks
+  applyDiffsToNewEditor: () => {
+    const { editorInstance, pendingEdits, isAgenticMode } = get();
+
+    // Only apply if we're in agentic mode and have pending edits
+    if (!editorInstance || !isAgenticMode || pendingEdits.length === 0) return;
+
+    // Apply diff marks to each pending edit using combined operation
+    // O(n) per edit
+    for (const edit of pendingEdits) {
+      editorInstance.commands.addDiffMarkAndInsertAfter(
+        edit.nodeId,
+        edit.replaceText,
+        "add"
+      );
+    }
+  },
+
   acceptEdit: (nodeId: string) => {
-    const { pendingEdits, currentEditIndex, editorInstance } = get();
+    const {
+      pendingEdits,
+      currentEditIndex,
+      editorInstance,
+      versionCurrentlyInUse,
+    } = get();
     const editIndex = pendingEdits.findIndex((e) => e.nodeId === nodeId);
 
     if (editIndex === -1 || !editorInstance) return;
@@ -609,22 +634,53 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
     // Remove this edit from pending
     const newPendingEdits = pendingEdits.filter((e) => e.nodeId !== nodeId);
-    const newIndex = Math.min(
-      currentEditIndex,
-      Math.max(0, newPendingEdits.length - 1)
-    );
-    const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
 
-    set({
-      pendingEdits: newPendingEdits,
-      currentEditIndex: newIndex,
-      isAgenticMode: newPendingEdits.length > 0,
-      focusedNodeId: newFocusedId,
-    });
+    // If this was the last edit, finalize and exit agentic mode properly
+    if (newPendingEdits.length === 0) {
+      // Clean any remaining diff marks (safety)
+      editorInstance.commands.removeAllDiffMarks();
+
+      // Capture final content as new source of truth
+      const finalContent = editorInstance.getJSON();
+
+      set({
+        content: finalContent,
+        pendingEdits: [],
+        currentEditIndex: 0,
+        isAgenticMode: false,
+        focusedNodeId: null,
+        agenticContent: null,
+        initialEditCount: 0,
+      });
+
+      // Restore editable and trigger autosave
+      editorInstance.setEditable(true);
+      if (versionCurrentlyInUse?.documentId) {
+        get().initiateAutosave(versionCurrentlyInUse.documentId);
+      }
+    } else {
+      // More edits remaining - just update pending list
+      const newIndex = Math.min(
+        currentEditIndex,
+        Math.max(0, newPendingEdits.length - 1)
+      );
+      const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
+
+      set({
+        pendingEdits: newPendingEdits,
+        currentEditIndex: newIndex,
+        focusedNodeId: newFocusedId,
+      });
+    }
   },
 
   rejectEdit: (nodeId: string) => {
-    const { pendingEdits, currentEditIndex, editorInstance } = get();
+    const {
+      pendingEdits,
+      currentEditIndex,
+      editorInstance,
+      versionCurrentlyInUse,
+    } = get();
     const editIndex = pendingEdits.findIndex((e) => e.nodeId === nodeId);
 
     if (editIndex === -1 || !editorInstance) return;
@@ -641,33 +697,60 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
 
     // Remove this edit from pending
     const newPendingEdits = pendingEdits.filter((e) => e.nodeId !== nodeId);
-    const newIndex = Math.min(
-      currentEditIndex,
-      Math.max(0, newPendingEdits.length - 1)
-    );
-    const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
 
-    set({
-      pendingEdits: newPendingEdits,
-      currentEditIndex: newIndex,
-      isAgenticMode: newPendingEdits.length > 0,
-      focusedNodeId: newFocusedId,
-    });
+    // If this was the last edit, finalize and exit agentic mode properly
+    if (newPendingEdits.length === 0) {
+      // Clean any remaining diff marks (safety)
+      editorInstance.commands.removeAllDiffMarks();
+
+      // Capture final content as new source of truth
+      const finalContent = editorInstance.getJSON();
+
+      set({
+        content: finalContent,
+        pendingEdits: [],
+        currentEditIndex: 0,
+        isAgenticMode: false,
+        focusedNodeId: null,
+        agenticContent: null,
+        initialEditCount: 0,
+      });
+
+      // Restore editable and trigger autosave
+      editorInstance.setEditable(true);
+      if (versionCurrentlyInUse?.documentId) {
+        get().initiateAutosave(versionCurrentlyInUse.documentId);
+      }
+    } else {
+      // More edits remaining - just update pending list
+      const newIndex = Math.min(
+        currentEditIndex,
+        Math.max(0, newPendingEdits.length - 1)
+      );
+      const newFocusedId = newPendingEdits[newIndex]?.nodeId ?? null;
+
+      set({
+        pendingEdits: newPendingEdits,
+        currentEditIndex: newIndex,
+        focusedNodeId: newFocusedId,
+      });
+    }
   },
 
   acceptAllEdits: () => {
-    const { editorInstance, pendingEdits } = get();
+    const { editorInstance, pendingEdits, versionCurrentlyInUse } = get();
     if (!editorInstance) return;
 
     // Accept = remove original (delete) nodes, keep replacement (add) nodes, strip marks
-    const chain = editorInstance.chain().focus();
+    // Use batch operation for O(n)
+    const nodeIdsToDelete = new Set(pendingEdits.map((e) => e.nodeId));
 
-    // Delete all original nodes (marked as "delete")
-    for (const edit of pendingEdits) {
-      chain.deleteNodeById(edit.nodeId);
-    }
-    // Remove all diff marks from replacements
-    chain.removeAllDiffMarks().run();
+    editorInstance
+      .chain()
+      .focus()
+      .deleteNodesByIds(nodeIdsToDelete) // O(n) single traversal
+      .removeAllDiffMarks() // O(n)
+      .run();
 
     // Capture the cleaned editor content as the new source of truth
     const cleanedContent = editorInstance.getJSON();
@@ -681,21 +764,28 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       focusedNodeId: null,
       initialEditCount: 0,
     });
+
+    // Restore editable state (extra redundancy; key prop already handles this)
+    editorInstance.setEditable(true);
+
+    // Trigger autosave to persist the accepted changes
+    if (versionCurrentlyInUse?.documentId) {
+      get().initiateAutosave(versionCurrentlyInUse.documentId);
+    }
   },
 
   rejectAllEdits: () => {
-    const { editorInstance, agenticContent } = get();
+    const { editorInstance, content, versionCurrentlyInUse } = get();
     if (!editorInstance) return;
 
-    // agenticContent holds the ORIGINAL content saved before AI edits were applied
-    // content may have been updated by onUpdate handler during editing
-    if (agenticContent) {
-      editorInstance.commands.setContent(agenticContent);
+    // content holds the ORIGINAL content (frozen when entering agentic mode)
+    // agenticContent is the working copy with diffs (now being discarded)
+    // Restore the editor to the original content
+    if (content) {
+      editorInstance.commands.setContent(content);
     }
 
     set({
-      // Restore content state to the original
-      content: agenticContent,
       agenticContent: null,
       pendingEdits: [],
       currentEditIndex: 0,
@@ -703,6 +793,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       focusedNodeId: null,
       initialEditCount: 0,
     });
+
+    // Restore editable state (extra redundancy; key prop already handles this)
+    editorInstance.setEditable(true);
+
+    // Trigger autosave to persist the restored content
+    if (versionCurrentlyInUse?.documentId) {
+      get().initiateAutosave(versionCurrentlyInUse.documentId);
+    }
   },
 
   navigateEdit: (direction: "prev" | "next") => {
@@ -750,22 +848,32 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   continueWithPartialEdits: () => {
-    const { pendingEdits, initialEditCount, editorInstance, agenticContent } =
-      get();
+    const {
+      pendingEdits,
+      initialEditCount,
+      editorInstance,
+      versionCurrentlyInUse,
+    } = get();
     if (!editorInstance) return;
 
     const acceptedCount = initialEditCount - pendingEdits.length;
 
     // Remove all remaining pending edits (reject them visually)
-    const chain = editorInstance.chain().focus();
-    for (const edit of pendingEdits) {
-      chain.deleteReplacementNode(edit.nodeId);
-    }
-    chain.removeAllDiffMarks().run();
+    // Use batch operation for O(n)
+    const nodeIdsToReject = new Set(pendingEdits.map((e) => e.nodeId));
 
-    // The remaining content (with accepted changes) becomes the new content
+    editorInstance
+      .chain()
+      .focus()
+      .deleteReplacementNodesByIds(nodeIdsToReject) // O(n) single traversal
+      .removeAllDiffMarks() // O(n)
+      .run();
+
+    // Capture the current editor content (with accepted changes applied)
+    const currentContent = editorInstance.getJSON();
+
     set({
-      content: agenticContent, // Preserve the accepted changes
+      content: currentContent,
       pendingEdits: [],
       currentEditIndex: 0,
       isAgenticMode: false,
@@ -773,6 +881,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       agenticContent: null,
       initialEditCount: 0,
     });
+
+    // Restore editable state
+    editorInstance.setEditable(true);
+
+    // Trigger autosave
+    if (versionCurrentlyInUse?.documentId) {
+      get().initiateAutosave(versionCurrentlyInUse.documentId);
+    }
 
     if (acceptedCount > 0) {
       toast.success(

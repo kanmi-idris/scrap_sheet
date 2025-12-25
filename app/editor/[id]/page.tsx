@@ -190,10 +190,11 @@ export default function EditorPage({
                 <span className="sr-only">Loading document content...</span>
               )}
               <Editor
-                // this key changes forces the editor to remount to c=show the new changes
+                // Key includes isAgenticMode to forces a remount when entering/exiting agentic mode
+                // This ensures editable state is correctly reapplied
                 key={`${documentId}:${
                   versionBeingPreviewed?.id ?? (isHydrated ? "live" : "loading")
-                }`}
+                }:${isAgenticMode ? "agentic" : "normal"}`}
                 initialValue={displayContent ?? undefined}
                 editable={
                   !versionBeingPreviewed && !isAgenticMode && isHydrated
