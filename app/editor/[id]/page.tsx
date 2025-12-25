@@ -172,8 +172,13 @@ export default function EditorPage({
           </EditorBanner>
         )}
 
-        {/* AI Action Toolbar - fixed to viewport, always visible */}
-        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-20">
+        {/* AI Action Toolbar - fixed to viewport, hidden on mobile during agentic mode */}
+        <div
+          className={cn(
+            "fixed left-4 top-1/2 -translate-y-1/2 z-20",
+            isAgenticMode && "hidden sm:block"
+          )}
+        >
           <AIActionToolbar />
         </div>
 

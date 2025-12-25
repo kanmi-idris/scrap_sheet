@@ -37,7 +37,7 @@ export function AIOnboardingHint({
               variant="ghost"
               size="icon-xs"
               onClick={onDismiss}
-              className="absolute -top-2 -right-0 sm:-right-2 text-muted-foreground hover:text-foreground z-10 hover:bg-transparent"
+              className="absolute -top-2 right-0 sm:-right-2 text-muted-foreground hover:text-foreground z-10 hover:bg-transparent"
               aria-label="Dismiss hint"
             >
               <div className="border border-dashed border-muted-foreground/40 rounded-full p-1 bg-background">
