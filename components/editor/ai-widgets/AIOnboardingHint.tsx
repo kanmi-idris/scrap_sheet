@@ -29,7 +29,7 @@ export function AIOnboardingHint({
             stiffness: 100,
             mass: 0.8,
           }}
-          className="absolute -top-52 left-10 -translate-x-1/2 w-80 pointer-events-auto z-50 font-excali bg-transparent"
+          className="absolute -top-44 sm:-top-52 left-1/2 sm:left-10 -translate-x-1/2 w-[calc(100vw-2rem)] sm:w-80 max-w-80 pointer-events-auto z-50 font-excali bg-transparent"
         >
           <div className="relative">
             {/* Dismiss Button */}
@@ -37,7 +37,7 @@ export function AIOnboardingHint({
               variant="ghost"
               size="icon-xs"
               onClick={onDismiss}
-              className="absolute -top-2 -right-2 text-muted-foreground hover:text-foreground z-10 hover:bg-transparent"
+              className="absolute -top-2 -right-0 sm:-right-2 text-muted-foreground hover:text-foreground z-10 hover:bg-transparent"
               aria-label="Dismiss hint"
             >
               <div className="border border-dashed border-muted-foreground/40 rounded-full p-1 bg-background">
@@ -50,16 +50,16 @@ export function AIOnboardingHint({
             </Button>
 
             {/* Message Card */}
-            <div className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-5 shadow-sm transform -rotate-1">
+            <div className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-4 sm:p-5 shadow-sm transform -rotate-1">
               <div
                 role="status"
-                className="text-lg text-foreground/80 leading-snug space-y-3"
+                className="text-base sm:text-lg text-foreground/80 leading-snug space-y-2 sm:space-y-3"
               >
                 <p className="font-medium flex items-center gap-2">
-                  <span className="text-xl">✨</span>
+                  <span className="text-lg sm:text-xl">✨</span>
                   Start here...
                 </p>
-                <div className="text-base text-muted-foreground space-y-1 pl-1">
+                <div className="text-sm sm:text-base text-muted-foreground space-y-0.5 sm:space-y-1 pl-1">
                   <p>- Upload files for context</p>
                   <p>- Dictate your ideas</p>
                   <p>- Let AI brainstorm</p>
@@ -78,10 +78,13 @@ export function AIOnboardingHint({
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="absolute -bottom-14 left-1/2 -translate-x-1/2 text-muted-foreground/50"
+              className="absolute -bottom-12 sm:-bottom-14 left-1/2 -translate-x-1/2 text-muted-foreground/50"
               aria-hidden="true"
             >
-              <SquigglyArrow dashed className="w-16 h-16 transform rotate-12" />
+              <SquigglyArrow
+                dashed
+                className="w-14 h-14 sm:w-16 sm:h-16 transform rotate-12"
+              />
             </motion.div>
           </div>
         </motion.div>
