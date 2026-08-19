@@ -23,7 +23,7 @@ let versionRotationTimeout: ReturnType<typeof setTimeout> | null = null;
 let isResetting = false; // Flag to prevent state updates during/after reset
 
 /**
- * Simplified agentic edit - uses node IDs instead of positions.
+ * agentic edit - uses node IDs instead of positions.
  * The client finds nodes by their nodeId mark, eliminating position drift.
  */
 export interface AgenticEdit {

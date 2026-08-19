@@ -21,7 +21,7 @@ This store manages the complete lifecycle of document editing, including:
 ┌─────────────────────────────────────────────────────────────────┐
 │  documents (metadata)           versions (content snapshots)   │
 │  ├─ id                          ├─ id                          │
-│  ├─ title                       ├─ documentId (FK)             │
+│  ├─ title                       ├─ documentId (Foreign Key)             │
 │  ├─ preview                     ├─ content (JSON string)       │
 │  ├─ createdAt                   ├─ title                       │
 │  └─ lastModified                └─ timestamp                   │
